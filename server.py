@@ -1,4 +1,5 @@
 import os
+import hashlib
 import sqlite3
 from flask import *
 app = Flask(__name__)
@@ -17,7 +18,16 @@ table_list = c.fetchall()
 
 if not table_list:
     c.execute("CREATE TABLE user_info (user_id TEXT, password TEXT, code TEXT, qq TEXT, wechat TEXT, taobao TEXT)")
+    c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?)", ('13800000000', '', '666666', '', '', ''))
     conn.commit()
+
+
+def secret_pass(secret):
+    return hashlib.md5(secret.encode('utf-8')).hexdigest()
+
+
+def secret_check(password, secret):
+    return secret_pass(password) == secret
 
 
 @app.route('/register', methods=['POST'])
@@ -44,7 +54,8 @@ def api_register():
         if c.fetchall():
             return jsonify({'status': 'failed', 'message': 'user_id already exists'})
 
-        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?)", (user_id, password, code, qq, wechat, taobao))
+        secret = secret_pass(password)
+        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?)", (user_id, secret, code, qq, wechat, taobao))
         conn.commit()
         return jsonify({'status': 'ok', 'message': 'register ok'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -68,7 +79,7 @@ def api_login():
         ret = c.fetchall()
         if not ret:
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
-        if ret[0][1] != password:
+        if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
         return jsonify({'status': 'ok', 'message': 'login ok'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -92,7 +103,7 @@ def api_query():
         ret = c.fetchall()
         if not ret:
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
-        if ret[0][1] != password:
+        if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
         code, qq, wechat, taobao = ret[0][2:]
 
