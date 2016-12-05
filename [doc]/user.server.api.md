@@ -123,6 +123,7 @@
 {
     user_id: string[11 digits],
     inviter: string[11 digits],
+    code: string[6 digits],
     qq: string,
     wechat: string,
     taobao: string

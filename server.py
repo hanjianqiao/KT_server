@@ -73,4 +73,31 @@ def api_login():
         return jsonify({'status': 'ok', 'message': 'login ok'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
+
+@app.route('/query', methods=['POST'])
+def api_query():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+        password = info_data.get('password', '')
+
+        # format check
+        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
+            return jsonify({'status': 'failed', 'message': 'user_id format error'})
+        if not (isinstance(password, str) and len(password) >= 6):
+            return jsonify({'status': 'failed', 'message': 'password format error'})
+
+        # user_id exists check
+        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id, ))
+        ret = c.fetchall()
+        if not ret:
+            return jsonify({'status': 'failed', 'message': 'user_id not exists'})
+        if ret[0][1] != password:
+            return jsonify({'status': 'failed', 'message': 'password not match'})
+        code, qq, wechat, taobao = ret[0][2:]
+
+        data = {'user_id': user_id, 'code': code, 'qq': qq, 'wechat': wechat, 'taobao': taobao}
+        return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
+    return jsonify({'status': 'failed', 'message': 'json data format error'})
+
 app.run(host='0.0.0.0')
