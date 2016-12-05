@@ -40,6 +40,7 @@
 2. [user_id|password|code] format error
 3. user_id already exists
 4. code not exist
+5. json data format error
 ```
 
 ---
@@ -73,6 +74,7 @@
 2. [user_id|password] format error
 3. user_id not exist
 4. password not match
+5. json data format error
 ```
 
 ---
@@ -108,6 +110,7 @@
 2. [user_id|password] format error
 3. user_id not exist
 4. password not match
+5. json data format error
 ```
 
 ---
