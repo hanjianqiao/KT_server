@@ -24,16 +24,29 @@ if not table_list:
 def api_register():
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
-        info_list = tuple(info_data.values())
+        user_id = info_data.get('user_id', '')
+        password = info_data.get('password', '')
+        code = info_data.get('code', '')
+        qq = info_data.get('qq', '')
+        wechat = info_data.get('wechat', '')
+        taobao = info_data.get('taobao', '')
 
-        if len(info_list) == 6:
-            c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?)", info_list)
-            resp = jsonify({'status': 'ok', 'message': 'register fine'})
-            return resp
-        else:
-            resp = jsonify({'status': 'failed', 'message': 'register data format error'})
-            return resp
-    resp = jsonify({'status': 'failed', 'message': 'bad request'})
-    return resp
+        # format check
+        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
+            return jsonify({'status': 'failed', 'message': 'user_id format error'})
+        if not (isinstance(password, str) and len(password) >= 6):
+            return jsonify({'status': 'failed', 'message': 'password format error'})
+        if not (isinstance(code, str) and len(code) == 6 and all(map(lambda d: d.isdigit(), code))):
+            return jsonify({'status': 'failed', 'message': 'code format error'})
 
-app.run()
+        # user_id exists check
+        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id, ))
+        if c.fetchall():
+            return jsonify({'status': 'failed', 'message': 'user_id already exists'})
+
+        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?)", (user_id, password, code, qq, wechat, taobao))
+        conn.commit()
+        return jsonify({'status': 'ok', 'message': 'register ok'})
+    return jsonify({'status': 'failed', 'message': 'json data format error'})
+
+app.run(host='0.0.0.0')
