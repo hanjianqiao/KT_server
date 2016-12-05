@@ -129,3 +129,13 @@
     taobao: string
 }
 ```
+
+---
+
+### `Database Demo`
+
+![](http://zhijia-10060660.file.myqcloud.com/avatar/20161205132522_893.png)
+
+1. the `inviter` is the inviter of a user
+2. the `code` is the code of a user
+3. if B use the A's code, then A is the inviter of B

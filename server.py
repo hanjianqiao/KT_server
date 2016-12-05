@@ -1,7 +1,9 @@
 import os
+import random
 import hashlib
 import sqlite3
 from flask import *
+
 app = Flask(__name__)
 
 current_path = os.path.dirname(__file__)
@@ -17,8 +19,11 @@ c.execute("SELECT name FROM sqlite_master WHERE type='table';")
 table_list = c.fetchall()
 
 if not table_list:
-    c.execute("CREATE TABLE user_info (user_id TEXT, password TEXT, code TEXT, qq TEXT, wechat TEXT, taobao TEXT)")
-    c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?)", ('13800000000', '', '666666', '', '', ''))
+    c.execute("""
+        CREATE TABLE user_info (user_id TEXT, password TEXT, inviter TEXT, code TEXT, qq TEXT, wechat TEXT, taobao TEXT)
+        """)
+    c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?)",
+              ('13800000000', '', '13800000000', '666666', '', '', ''))
     conn.commit()
 
 
@@ -28,6 +33,15 @@ def secret_pass(secret):
 
 def secret_check(password, secret):
     return secret_pass(password) == secret
+
+
+def random_code():
+    for i in range(10):
+        code = '{:06d}'.format(random.randrange(0, 1000000))
+        c.execute("SELECT code FROM user_info WHERE code=?", (code,))
+        if not c.fetchone():
+            return code
+    return '666666'
 
 
 @app.route('/register', methods=['POST'])
@@ -49,13 +63,21 @@ def api_register():
         if not (isinstance(code, str) and len(code) == 6 and all(map(lambda d: d.isdigit(), code))):
             return jsonify({'status': 'failed', 'message': 'code format error'})
 
+        c.execute("SELECT user_id FROM user_info WHERE code=?", (code,))
+        inviter_row = c.fetchone()
+        if not inviter_row:
+            return jsonify({'status': 'failed', 'message': 'code not exist'})
+        inviter = inviter_row[0]
+        code = random_code()
+
         # user_id exists check
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id, ))
+        c.execute("SELECT user_id FROM user_info WHERE user_id=?", (user_id,))
         if c.fetchall():
             return jsonify({'status': 'failed', 'message': 'user_id already exists'})
 
         secret = secret_pass(password)
-        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?)", (user_id, secret, code, qq, wechat, taobao))
+        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?)",
+                  (user_id, secret, inviter, code, qq, wechat, taobao))
         conn.commit()
         return jsonify({'status': 'ok', 'message': 'register ok'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -75,7 +97,7 @@ def api_login():
             return jsonify({'status': 'failed', 'message': 'password format error'})
 
         # user_id exists check
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id, ))
+        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         if not ret:
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
@@ -99,16 +121,17 @@ def api_query():
             return jsonify({'status': 'failed', 'message': 'password format error'})
 
         # user_id exists check
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id, ))
+        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         if not ret:
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
-        code, qq, wechat, taobao = ret[0][2:]
+        inviter, code, qq, wechat, taobao = ret[0][2:]
 
-        data = {'user_id': user_id, 'code': code, 'qq': qq, 'wechat': wechat, 'taobao': taobao}
+        data = {'user_id': user_id, 'inviter': inviter, 'code': code, 'qq': qq, 'wechat': wechat, 'taobao': taobao}
         return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
+
 
 app.run(host='0.0.0.0')
