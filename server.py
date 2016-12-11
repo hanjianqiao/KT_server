@@ -137,12 +137,12 @@ def api_query():
 # Mall htmls
 @app.route('/recommend', methods=['GET'])
 def recommendIndex():
-    return "<html><head><meta http-equiv=\"Content-Language\" content=\"zh-CN\"><meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\"><title>Love is forever!</title></head><body>服务器开小差啦。。。<br></body></html>"
+    return "<html><head><meta http-equiv=\"Content-Language\" content=\"zh-CN\"><meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\"><title>Love is forever!</title></head><body>Service is comming ...<br></body></html>"
 
 
 @app.route('/selfchoose', methods=['GET'])
 def recommendIndex():
-    return "<html><head><meta http-equiv=\"Content-Language\" content=\"zh-CN\"><meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\"><title>Love is forever!</title></head><body>服务器开小差啦。。。<br></body></html>"
+    return "<html><head><meta http-equiv=\"Content-Language\" content=\"zh-CN\"><meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\"><title>Love is forever!</title></head><body>Service is comming ...<br></body></html>"
 
 
 app.run(host='0.0.0.0')
