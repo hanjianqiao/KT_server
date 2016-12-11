@@ -1,5 +1,6 @@
 import os
 import random
+import codecs
 import hashlib
 import sqlite3
 from flask import *
@@ -137,12 +138,14 @@ def api_query():
 # Mall htmls
 @app.route('/recommend', methods=['GET'])
 def recommendIndex():
-    return "<html><head><meta http-equiv=\"Content-Language\" content=\"zh-CN\"><meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\"><title>Love is forever!</title></head><body>Service is comming ...<br></body></html>"
+    with codecs.open('./recommend.html', 'r', 'utf-8') as f:
+        return f.read()
 
 
 @app.route('/selfchoose', methods=['GET'])
-def recommendIndex():
-    return "<html><head><meta http-equiv=\"Content-Language\" content=\"zh-CN\"><meta HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\"><title>Love is forever!</title></head><body>Service is comming ...<br></body></html>"
+def selfChooseIndex():
+    with codecs.open('./selfchoose.html', 'r', 'utf-8') as f:
+        return f.read()
 
 
 app.run(host='0.0.0.0')
