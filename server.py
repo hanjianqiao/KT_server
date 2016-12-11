@@ -134,4 +134,17 @@ def api_query():
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
+# Mall htmls
+@app.route('/recommend', methods=['GET'])
+def recommendIndex():
+    with open("recommend.html") as f:
+        return f.read()
+
+
+@app.route('/selfchoose', methods=['GET'])
+def recommendIndex():
+    with open("selfchoose.html") as f:
+        return f.read()
+
+
 app.run(host='0.0.0.0')
