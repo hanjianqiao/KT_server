@@ -1,4 +1,5 @@
 import os
+import re
 import random
 import codecs
 import hashlib
@@ -21,10 +22,17 @@ table_list = c.fetchall()
 
 if not table_list:
     c.execute("""
-        CREATE TABLE user_info (user_id TEXT, password TEXT, inviter TEXT, code TEXT, qq TEXT, wechat TEXT, taobao TEXT)
+        CREATE TABLE user_info (user_id TEXT,
+                                password TEXT,
+                                inviter TEXT,
+                                code TEXT,
+                                email TEXT,
+                                qq TEXT,
+                                wechat TEXT,
+                                taobao TEXT)
         """)
-    c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?)",
-              ('13800000000', '', '13800000000', '666666', '', '', ''))
+    c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+              ('13800000000', '', '13800000000', '666666', 'admin@kouchenvip.com', '', '', ''))
     conn.commit()
 
 
@@ -52,6 +60,7 @@ def api_register():
         user_id = info_data.get('user_id', '')
         password = info_data.get('password', '')
         code = info_data.get('code', '')
+        email = info_data.get('email', '')
         qq = info_data.get('qq', '')
         wechat = info_data.get('wechat', '')
         taobao = info_data.get('taobao', '')
@@ -63,6 +72,8 @@ def api_register():
             return jsonify({'status': 'failed', 'message': 'password format error'})
         if not (isinstance(code, str) and len(code) == 6 and all(map(lambda d: d.isdigit(), code))):
             return jsonify({'status': 'failed', 'message': 'code format error'})
+        if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
+            return jsonify({'status': 'failed', 'message': 'email format error'})
 
         c.execute("SELECT user_id FROM user_info WHERE code=?", (code,))
         inviter_row = c.fetchone()
@@ -76,9 +87,14 @@ def api_register():
         if c.fetchall():
             return jsonify({'status': 'failed', 'message': 'user_id already exists'})
 
+        # email exists check
+        c.execute("SELECT email FROM user_info WHERE email=?", (email,))
+        if c.fetchall():
+            return jsonify({'status': 'failed', 'message': 'email already exists'})
+
         secret = secret_pass(password)
-        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?)",
-                  (user_id, secret, inviter, code, qq, wechat, taobao))
+        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                  (user_id, secret, inviter, code, email, qq, wechat, taobao))
         conn.commit()
         return jsonify({'status': 'ok', 'message': 'register ok'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -128,22 +144,23 @@ def api_query():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
-        inviter, code, qq, wechat, taobao = ret[0][2:]
+        inviter, code, email, qq, wechat, taobao = ret[0][2:]
 
-        data = {'user_id': user_id, 'inviter': inviter, 'code': code, 'qq': qq, 'wechat': wechat, 'taobao': taobao}
+        data = {'user_id': user_id, 'inviter': inviter, 'code': code,
+                'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao}
         return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
-# Mall htmls
+# Mall Pages
 @app.route('/recommend', methods=['GET'])
-def recommendIndex():
+def page_recommend():
     with codecs.open('./recommend.html', 'r', 'utf-8') as f:
         return f.read()
 
 
 @app.route('/selfchoose', methods=['GET'])
-def selfChooseIndex():
+def page_self_choose():
     with codecs.open('./selfchoose.html', 'r', 'utf-8') as f:
         return f.read()
 

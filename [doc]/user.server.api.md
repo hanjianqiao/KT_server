@@ -14,6 +14,7 @@
     user_id: string[11 digits],
     password: string[6-20 digits or letters],
     code: string[6 digits],
+    email: string[normal email string],
     qq: string,
     wechat: string,
     taobao: string
@@ -37,10 +38,11 @@
 
 ```
 1. register ok
-2. [user_id|password|code] format error
+2. [user_id|password|code|email] format error
 3. user_id already exists
-4. code not exist
-5. json data format error
+4. email already exists
+5. code not exist
+6. json data format error
 ```
 
 ---
@@ -124,6 +126,7 @@
     user_id: string[11 digits],
     inviter: string[11 digits],
     code: string[6 digits],
+    email: string,
     qq: string,
     wechat: string,
     taobao: string
@@ -139,3 +142,11 @@
 1. the `inviter` is the inviter of a user
 2. the `code` is the code of a user
 3. if B use the A's code, then A is the inviter of B
+
+`Test Code`
+
+```
+curl -H "Content-Type: application/json" -X POST\
+-d '{"user_id":"15913101318","password":"123456","code":"666666", "email":"1@2"}'\
+http://127.0.0.1:5000/login
+```
