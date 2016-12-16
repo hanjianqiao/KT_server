@@ -166,5 +166,3 @@ def page_self_choose():
 
 context = ('server.crt', 'server.key')
 app.run(host='0.0.0.0', port=5000, ssl_context=context)
-#app.run(host='0.0.0.0')
-#app.run(host='0.0.0.0')
