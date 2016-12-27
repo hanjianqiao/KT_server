@@ -160,6 +160,7 @@ http://127.0.0.1:5000/login
 ```sh
 sudo apt-get install apache2
 sudo apt-get install libapache2-mod-wsgi-py3
+sudo a2enmod ssl
 ```
 
 2. `modify Apache config file`
@@ -169,19 +170,27 @@ sudo vim /etc/apache2/sites-enabled/000-default.conf
 # config file detail in next slide
 ```
 
+```sh
+sudo vim /etc/apache2/apache2.conf
+# add "ServerName DomainName" on the top
+# DomainName: like "secure.hanjianqiao.cn"
+```
+
 ---
 
 ### `Deploy`
 
-3. `Prepare environment`
-	a.`Add a line to the top of /etc/apache2/apache2.conf`
-		ServerName secure.hanjianqiao.cn
-	b.`Enable SSL module`
-		```
-		sudo a2enmod ssl
-		```
+3. `set path permission`
 
-4. `Start Apache Server`
+```sh
+sudo groupadd varwwwusers
+sudo chgrp -R varwwwusers /home/ubuntu/user.server
+sudo adduser www-data varwwwusers
+sudo chmod -R 770 /home/ubuntu/user.server
+usermod -a -G varwwwusers ubuntu
+```
+
+4. `start Apache server`
 
 ```sh
 sudo apache2ctl restart
@@ -196,10 +205,8 @@ sudo apache2ctl restart
     DocumentRoot /home/ubuntu/user.server/
     WSGIScriptAlias / /home/ubuntu/user.server/start.wsgi
 <Directory /home/ubuntu/user.server/>
-    <Files start.wsgi>
-        Require all granted
-        Require host ip
-    </Files>
+    Require all granted
+    Require host ip
 </Directory>
     ErrorLog ${APACHE_LOG_DIR}/error.log
     LogLevel warn
@@ -219,10 +226,8 @@ sudo apache2ctl restart
     SSLCertificateFile "/home/ubuntu/user.server/server.crt"
     SSLCertificateKeyFile "/home/ubuntu/user.server/server.key"
 <Directory /home/ubuntu/user.server/>
-    <Files start.wsgi>
-        Require all granted
-        Require host ip
-    </Files>
+    Require all granted
+    Require host ip
 </Directory>
     ErrorLog ${APACHE_LOG_DIR}/error.log
     LogLevel warn
