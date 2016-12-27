@@ -169,6 +169,10 @@ sudo vim /etc/apache2/sites-enabled/000-default.conf
 # config file detail in next slide
 ```
 
+---
+
+### `Deploy`
+
 3. `Prepare environment`
 	a.`Add a line to the top of /etc/apache2/apache2.conf`
 		ServerName secure.hanjianqiao.cn
