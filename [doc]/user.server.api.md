@@ -188,6 +188,7 @@ sudo chgrp -R varwwwusers /home/ubuntu/user.server
 sudo adduser www-data varwwwusers
 sudo chmod -R 770 /home/ubuntu/user.server
 usermod -a -G varwwwusers ubuntu
+git config core.filemode false
 ```
 
 4. `start Apache server`
