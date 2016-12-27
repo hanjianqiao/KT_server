@@ -179,12 +179,13 @@ sudo apache2ctl restart
 
 ### `Deploy`
 
-`Apache Config File: 000-default.conf`
-
 ```
 <VirtualHost *:80>
     DocumentRoot /home/ubuntu/user.server/
     WSGIScriptAlias / /home/ubuntu/user.server/start.wsgi
+    SSLEngine on
+    SSLCertificateFile "/home/ubuntu/user.server/server.cert"
+    SSLCertificateKeyFile "/home/ubuntu/user.server/server.key"
 <Directory /home/ubuntu/user.server/>
     <Files start.wsgi>
         Require all granted
