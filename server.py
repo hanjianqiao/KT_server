@@ -14,26 +14,29 @@ if not os.path.exists(database_folder):
     os.mkdir(database_folder)
 database_path = os.path.join(database_folder, 'user_info.db')
 
-conn = sqlite3.connect(database_path)
-c = conn.cursor()
-# noinspection SqlResolve
-c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-table_list = c.fetchall()
 
-if not table_list:
-    c.execute("""
-        CREATE TABLE user_info (user_id TEXT,
-                                password TEXT,
-                                inviter TEXT,
-                                code TEXT,
-                                email TEXT,
-                                qq TEXT,
-                                wechat TEXT,
-                                taobao TEXT)
-        """)
-    c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-              ('13800000000', '', '13800000000', '666666', 'admin@kouchenvip.com', '', '', ''))
-    conn.commit()
+def create_table():
+    conn = sqlite3.connect(database_path)
+    c = conn.cursor()
+    # noinspection SqlResolve
+    c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    table_list = c.fetchall()
+
+    if not table_list:
+        c.execute("""
+            CREATE TABLE user_info (user_id TEXT,
+                                    password TEXT,
+                                    inviter TEXT,
+                                    code TEXT,
+                                    email TEXT,
+                                    qq TEXT,
+                                    wechat TEXT,
+                                    taobao TEXT)
+            """)
+        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                  ('13800000000', '', '13800000000', '666666',
+                   'admin@kouchenvip.com', '', '', ''))
+        conn.commit()
 
 
 def secret_pass(secret):
@@ -45,6 +48,8 @@ def secret_check(password, secret):
 
 
 def random_code():
+    conn = sqlite3.connect(database_path)
+    c = conn.cursor()
     for i in range(10):
         code = '{:06d}'.format(random.randrange(0, 1000000))
         c.execute("SELECT code FROM user_info WHERE code=?", (code,))
@@ -75,6 +80,8 @@ def api_register():
         if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
             return jsonify({'status': 'failed', 'message': 'email format error'})
 
+        conn = sqlite3.connect(database_path)
+        c = conn.cursor()
         c.execute("SELECT user_id FROM user_info WHERE code=?", (code,))
         inviter_row = c.fetchone()
         if not inviter_row:
@@ -114,6 +121,8 @@ def api_login():
             return jsonify({'status': 'failed', 'message': 'password format error'})
 
         # user_id exists check
+        conn = sqlite3.connect(database_path)
+        c = conn.cursor()
         c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         if not ret:
@@ -138,6 +147,8 @@ def api_query():
             return jsonify({'status': 'failed', 'message': 'password format error'})
 
         # user_id exists check
+        conn = sqlite3.connect(database_path)
+        c = conn.cursor()
         c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         if not ret:
@@ -167,6 +178,7 @@ def page_self_choose():
         return f.read()
 
 
+create_table()
 if __name__ == '__main__':
     context = ('server.crt', 'server.key')
     app.run(host='0.0.0.0', port=5000, ssl_context=context)
