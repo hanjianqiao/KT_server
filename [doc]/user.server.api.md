@@ -183,8 +183,28 @@ sudo apache2ctl restart
 <VirtualHost *:80>
     DocumentRoot /home/ubuntu/user.server/
     WSGIScriptAlias / /home/ubuntu/user.server/start.wsgi
+<Directory /home/ubuntu/user.server/>
+    <Files start.wsgi>
+        Require all granted
+        Require host ip
+    </Files>
+</Directory>
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    LogLevel warn
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+```
+
+---
+
+### `Deploy`
+
+```
+<VirtualHost *:443>
+    DocumentRoot /home/ubuntu/user.server/
+    WSGIScriptAlias / /home/ubuntu/user.server/start.wsgi
     SSLEngine on
-    SSLCertificateFile "/home/ubuntu/user.server/server.cert"
+    SSLCertificateFile "/home/ubuntu/user.server/server.crt"
     SSLCertificateKeyFile "/home/ubuntu/user.server/server.key"
 <Directory /home/ubuntu/user.server/>
     <Files start.wsgi>
