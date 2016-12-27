@@ -155,14 +155,18 @@ def api_query():
 # Mall Pages
 @app.route('/recommend', methods=['GET'])
 def page_recommend():
-    with codecs.open('./recommend.html', 'r', 'utf-8') as f:
+    filename = os.path.join(current_path, 'recommend.html')
+    with codecs.open(filename, 'r', 'utf-8') as f:
         return f.read()
 
 
 @app.route('/selfchoose', methods=['GET'])
 def page_self_choose():
-    with codecs.open('./selfchoose.html', 'r', 'utf-8') as f:
+    filename = os.path.join(current_path, 'selfchoose.html')
+    with codecs.open(filename, 'r', 'utf-8') as f:
         return f.read()
 
-context = ('server.crt', 'server.key')
-app.run(host='0.0.0.0', port=5000, ssl_context=context)
+
+if __name__ == '__main__':
+    context = ('server.crt', 'server.key')
+    app.run(host='0.0.0.0', port=5000, ssl_context=context)
