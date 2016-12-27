@@ -150,3 +150,49 @@ curl -H "Content-Type: application/json" -X POST\
 -d '{"user_id":"15913101318","password":"123456","code":"666666", "email":"1@2"}'\
 http://127.0.0.1:5000/login
 ```
+
+---
+
+### `Deploy`
+
+1. `install Apache & mod_wsgi`
+
+```sh
+sudo apt-get install apache2
+sudo apt-get install libapache2-mod-wsgi-py3
+```
+
+2. `modify Apache config file`
+
+```sh
+sudo vim /etc/apache2/sites-enabled/000-default.conf
+# config file detail in next slide
+```
+
+3. `Start Apache Server`
+
+```sh
+sudo apache2ctl restart
+```
+
+---
+
+### `Deploy`
+
+`Apache Config File: 000-default.conf`
+
+```
+<VirtualHost *:80>
+    DocumentRoot /home/ubuntu/user.server/
+    WSGIScriptAlias / /home/ubuntu/user.server/start.wsgi
+<Directory /home/ubuntu/user.server/>
+    <Files start.wsgi>
+        Require all granted
+        Require host ip
+    </Files>
+</Directory>
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    LogLevel warn
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+```
