@@ -183,6 +183,31 @@ def page_self_choose():
         return f.read()
 
 
+@app.route('/inc', methods=['POST'])
+def inc():
+    c = get_db().cursor()
+    c.execute("SELECT inviter FROM user_info WHERE user_id = 13800000000")
+    inviter_row = c.fetchone()
+    inviter = inviter_row[0]
+    newValue = str(int(inviter)+1)
+    c.execute("UPDATE user_info SET inviter = ? WHERE user_id = 13800000000",(newValue,))
+    get_db().commit()
+    return jsonify({'status': newValue})
+
+
+@app.route('/dec', methods=['POST'])
+def dec():
+    c = get_db().cursor()
+    c.execute("SELECT inviter FROM user_info WHERE user_id = 13800000000")
+    inviter_row = c.fetchone()
+    inviter = inviter_row[0]
+    newValue = str(int(inviter)-1)
+    c.execute("UPDATE user_info SET inviter = ? WHERE user_id = 13800000000",(newValue,))
+    get_db().commit()
+    return jsonify({'status': newValue})
+
+
 if __name__ == '__main__':
-    context = ('server.crt', 'server.key')
-    app.run(host='0.0.0.0', port=5000, ssl_context=context)
+    #context = ('server.crt', 'server.key')
+    #app.run(host='0.0.0.0', port=5000, ssl_context=context)
+    app.run(host='0.0.0.0', port=5000)
