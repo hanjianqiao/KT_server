@@ -140,6 +140,6 @@ def dec():
 
 
 if __name__ == '__main__':
-    #context = ('server.crt', 'server.key')
-    #app.run(host='0.0.0.0', port=5000, ssl_context=context)
-    app.run(host='0.0.0.0', port=5001)
+    context = ('server.crt', 'server.key')
+    app.run(host='0.0.0.0', port=5000, ssl_context=context)
+    #app.run(host='0.0.0.0', port=5001)

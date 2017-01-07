@@ -17,6 +17,9 @@ database_path = os.path.join(database_folder, 'user_info.db')
 
 def get_db():
     db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(database_path)
+        db.commit()
     return db
 
 
@@ -105,6 +108,5 @@ def page_self_choose():
 
 
 if __name__ == '__main__':
-    #context = ('server.crt', 'server.key')
-    #app.run(host='0.0.0.0', port=5000, ssl_context=context)
-    app.run(host='0.0.0.0', port=5000)
+    context = ('server.crt', 'server.key')
+    app.run(host='0.0.0.0', port=443, ssl_context=context)
