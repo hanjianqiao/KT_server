@@ -84,9 +84,7 @@ def api_query():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
-        inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month,
-        expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip,
-        invitee_agent, team_total = ret[0][2:]
+        inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month, expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip, invitee_agent, team_total = ret[0][2:]
 
         data = {'user_id': user_id, 'inviter': inviter, 'code': code,
                 'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao, 'type': type,
@@ -115,4 +113,5 @@ def page_self_choose():
 
 if __name__ == '__main__':
     context = ('server.crt', 'server.key')
-    app.run(host='0.0.0.0', port=443, ssl_context=context)
+    app.run(host='0.0.0.0', port=10000, ssl_context=context)
+    #app.run(host='0.0.0.0', port=3000)

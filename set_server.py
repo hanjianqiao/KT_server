@@ -138,21 +138,28 @@ def api_up2vip():
         expire_year = info_data.get('expire_year', '')
         expire_month = info_data.get('expire_month', '')
         expire_day = info_data.get('expire_day', '')
+        fee = info_data.get('fee', '')
 
         c = get_db().cursor()
 
         # check inviter's remains
-        c.execute("SELECT inviter FROM user_info WHERE userid = ?", (user_id,))
+        c.execute("SELECT inviter, balance FROM user_info WHERE userid = ?", (user_id,))
         inviter_row = c.fetchone()
-        inviter = inviter_row[0]
-        c.execute("SELECT invitee_vip, invitation_remain FROM user_info WHERE user_id = ?",(inviter,))
+        inviter = inviter_row[0][0]
+        user_balance = inviter_row[0][1]
+        if int(user_balance) < int(fee):
+            return 'balance'
+        c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
         inviter_row = c.fetchone()
         invitee_vip = inviter_row[0][0]
         invitation_remain = inviter_row[0][1]
+        inviter_balance = inviter_row[0][2]
         if int(invitation_remain) < 1:
             return 'remains'
         invitee_vip = str(int(invitee_vip)+1)
         invitation_remain = str(int(invitation_remain)-1)
+        user_balance = str(int(user_balance)-int(fee))
+        inviter_balance = str(int(inviter_balance)+int(fee))
 
         # update user's infomation
         c.execute("SELECT expire_year FROM user_info WHERE user_id = 13900000000")
@@ -160,11 +167,12 @@ def api_up2vip():
         code = inviter_row[0]
         newValue = str(int(code)+1)
         c.execute("UPDATE user_info SET expire_year = ? WHERE user_id = 13900000000",(newValue,))
-        c.execute("UPDATE user_info SET expire_year = ?, expire_month = ?, expire_day = ?, code = ?, type = ?, level = ? WHERE user_id = ?",
-                                      (expire_year, expire_month, expire_day, code, 'vip', 'vip', user_id,))
+        c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ?, expire_day = ?, code = ?, type = ?, level = ? WHERE user_id = ?",
+                                      (user_balance, expire_year, expire_month, expire_day, code, 'vip', 'vip', user_id,))
 
         # update inviter's information
-        c.execute("UPDATE user_info SET invitee_vip = ?, invitation_remain = ? WHERE user_id = ?",(invitee_vip, invitation_remain, inviter,))
+        c.execute("UPDATE user_info SET balance = ?, invitee_vip = ?, invitation_remain = ? WHERE user_id = ?",
+                  (inviter_balance, invitee_vip, invitation_remain, inviter,))
 
         get_db().commit()
         return jsonify({'status': 'ok', 'message': 'upgrade ok'})
@@ -177,30 +185,38 @@ def api_extendvip():
         info_data = request.get_json(force=True, silent=True)
         user_id = info_data.get('user_id', '')
         extend_month = info_data.get('extend_month', '')
+        fee = info_data.get('fee', '')
 
         c = get_db().cursor()
 
         # check inviter's remains
-        c.execute("SELECT inviter FROM user_info WHERE userid = ?", (user_id,))
+        c.execute("SELECT inviter, balance FROM user_info WHERE userid = ?", (user_id,))
         inviter_row = c.fetchone()
-        inviter = inviter_row[0]
-        c.execute("SELECT extend_remain FROM user_info WHERE user_id = ?",(inviter,))
+        inviter = inviter_row[0][0]
+        user_balance = inviter_row[0][1]
+        if int(user_balance) < int(fee):
+            return 'balance'
+        c.execute("SELECT extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
         inviter_row = c.fetchone()
-        extend_remain = inviter_row[0]
+        extend_remain = inviter_row[0][0]
+        inviter_balance = inviter_row[0][1]
         if int(extend_remain) < int(extend_month):
             return 'remains'
         extend_remain = str(int(extend_remain)-int(extend_month))
+        user_balance = str(int(user_balance)-int(fee))
+        inviter_balance = str(int(inviter_balance)+int(fee))
 
         # update user's infomation
         c.execute("SELECT expire_year, expire_month FROM user_info WHERE user_id= ?", (user_id,))
         ret = c.fetchall()
         expire_year = str(int(ret[0][0])+(int(ret[0][1])-1+int(extend_month))/12)
         expire_month = str((int(ret[0][1])-1+int(extend_month))%12+1)
-        c.execute("UPDATE user_info SET expire_year = ?, expire_month = ? WHERE user_id = ?",
-                                      (expire_year, expire_month, user_id,))
+        c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ? WHERE user_id = ?",
+                                      (user_balance, expire_year, expire_month, user_id,))
 
         # update inviter's information
-        c.execute("UPDATE user_info SET extend_remain = ? WHERE user_id = ?",(extend_remain, inviter,))
+        c.execute("UPDATE user_info SET balance = ?, extend_remain = ? WHERE user_id = ?",
+                  (inviter_balance, extend_remain, inviter,))
 
         get_db().commit()
         return jsonify({'status': 'ok', 'message': 'upgrade ok'})
@@ -215,23 +231,30 @@ def api_extendagent():
         level = info_data.get('level', '')
         invitation = info_data.get('invitation', '')
         extend = info_data.get('extend', '')
+        fee = info_data.get('fee', '')
 
         c = get_db().cursor()
         # check inviter's remains
-        c.execute("SELECT inviter FROM user_info WHERE userid = ?", (user_id,))
+        c.execute("SELECT inviter, balance FROM user_info WHERE userid = ?", (user_id,))
         inviter_row = c.fetchone()
-        inviter = inviter_row[0]
-        c.execute("SELECT invitee_agent, invitation_remain, extend_remain FROM user_info WHERE user_id = ?",(inviter,))
+        inviter = inviter_row[0][0]
+        user_balance = inviter_row[0][1]
+        if int(user_balance) < int(fee):
+            return 'balance'
+        c.execute("SELECT invitee_agent, invitation_remain, extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
         inviter_row = c.fetchone()
         invitation_remain = inviter_row[0][0]
         extend_remain = inviter_row[0][1]
         invitee_agent = inviter_row[0][2]
+        inviter_balance = inviter_row[0][3]
         if int(invitation_remain) < int(invitation):
             return 'remains'
         if int(extend_remain) < int(extend):
             return 'remains'
         invitation_remain = str(int(invitation_remain)-int(invitation))
         extend_remain = str(int(extend_remain)-int(extend))
+        user_balance = str(int(user_balance)-int(fee))
+        inviter_balance = str(int(inviter_balance)+int(fee))
 
         # update user's infomation
         c.execute("SELECT invitation_remain, extend_remain, level FROM user_info WHERE user_id = ?",(user_id,))
@@ -241,19 +264,36 @@ def api_extendagent():
         user_level = inviter_row[0][2]
         if user_level == 'vip':
             invitee_agent = str(int(invitee_agent)+1)
-        c.execute("UPDATE user_info SET invitation_remain = ?, extend_remain = ? WHERE user_id = ?",
-                  (user_invitation_remain, user_extend_remain, user_id,))
+        c.execute("UPDATE user_info SET invitation_remain = ?, extend_remain = ?, level = ?, balance = ? WHERE user_id = ?",
+                  (user_invitation_remain, user_extend_remain, user_id, level, user_balance))
 
         # update inviter's information
-        c.execute("UPDATE user_info SET invitee_agent = ?, invitation_remain = ?, extend_remain = ? WHERE user_id = ?",
-                  (invitee_agent, invitation_remain, extend_remain, inviter,))
+        c.execute("UPDATE user_info SET invitee_agent = ?, invitation_remain = ?, extend_remain = ?, balance = ? WHERE user_id = ?",
+                  (invitee_agent, invitation_remain, extend_remain, inviter, inviter_balance))
 
         get_db().commit()
         return jsonify({'status': 'ok', 'message': 'upgrade ok'})
     return jsonify({'status': 'failed'})
 
 
+@app.route('/charge', methods=['POST'])
+def charge():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+        amount = info_data.get('amount', '')
+
+        c = get_db().cursor()
+        c.execute("SELECT balance FROM user_info WHERE user_id = ?", (user_id,))
+        inviter_row = c.fetchone()
+        balance = inviter_row[0]
+        newValue = str(int(balance)+int(amount))
+        c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
+        get_db().commit()
+    return jsonify({'status': newValue})
+
+
 if __name__ == '__main__':
-    #context = ('server.crt', 'server.key')
-    #app.run(host='0.0.0.0', port=2000, ssl_context=context)
-    app.run(host='0.0.0.0', port=2000)
+    context = ('server.crt', 'server.key')
+    app.run(host='0.0.0.0', port=10010, ssl_context=context)
+    #app.run(host='0.0.0.0', port=2000)
