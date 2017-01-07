@@ -84,10 +84,16 @@ def api_query():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
-        inviter, code, email, qq, wechat, taobao = ret[0][2:]
+        inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month,
+        expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip,
+        invitee_agent, team_total = ret[0][2:]
 
         data = {'user_id': user_id, 'inviter': inviter, 'code': code,
-                'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao}
+                'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao, 'type': type,
+                'level': level, 'expire_year': expire_year, 'expire_month': expire_month,
+                'expire_day': expire_day, 'balance': balance, 'invitation_remain': invitation_remain,
+                'extend_remain': extend_remain, 'invitee_total': invitee_total, 'invitee_vip': invitee_vip,
+                'invitee_agent': invitee_agent, 'team_total': team_total}
         return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
