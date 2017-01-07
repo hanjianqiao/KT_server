@@ -131,7 +131,7 @@ def api_register():
 
 
 @app.route('/up2vip', methods=['POST'])
-def api_register():
+def api_up2vip():
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
         user_id = info_data.get('user_id', '')
@@ -172,7 +172,7 @@ def api_register():
 
 
 @app.route('/extendvip', methods=['POST'])
-def api_register():
+def api_extendvip():
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
         user_id = info_data.get('user_id', '')
@@ -208,7 +208,7 @@ def api_register():
 
 
 @app.route('/extendagent', methods=['POST'])
-def api_register():
+def api_extendagent():
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
         user_id = info_data.get('user_id', '')
