@@ -32,11 +32,12 @@ def get_db():
                                         email TEXT,
                                         qq TEXT,
                                         wechat TEXT,
-                                        taobao TEXT)
+                                        taobao TEXT,
+                                        type TEXT)
                 """)
-            c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                      ('13800000000', '', '13800000000', '666666',
-                       'admin@kouchenvip.com', '', '', ''))
+            c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                      ('13800000000', 'lanchitour', '13800000000', '666666',
+                       'admin@kouchenvip.com', '88888888', 'kouchenadmin', 'kouchenadmin', 'agent'))
         db.commit()
     return db
 
@@ -107,90 +108,21 @@ def api_register():
             return jsonify({'status': 'failed', 'message': 'email already exists'})
 
         secret = secret_pass(password)
-        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                  (user_id, secret, inviter, code, email, qq, wechat, taobao))
+        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  (user_id, secret, inviter, code, email, qq, wechat, taobao, 'user'))
         get_db().commit()
         return jsonify({'status': 'ok', 'message': 'register ok'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
-@app.route('/login', methods=['POST'])
-def api_login():
-    if request.headers['Content-Type'] == 'application/json':
-        info_data = request.get_json(force=True, silent=True)
-        user_id = info_data.get('user_id', '')
-        password = info_data.get('password', '')
-
-        # format check
-        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': 'user_id format error'})
-        if not (isinstance(password, str) and len(password) >= 6):
-            return jsonify({'status': 'failed', 'message': 'password format error'})
-
-        # user_id exists check
-        c = get_db().cursor()
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if not ret:
-            return jsonify({'status': 'failed', 'message': 'user_id not exists'})
-        if not secret_check(password, ret[0][1]):
-            return jsonify({'status': 'failed', 'message': 'password not match'})
-        return jsonify({'status': 'ok', 'message': 'login ok'})
-    return jsonify({'status': 'failed', 'message': 'json data format error'})
-
-
-@app.route('/query', methods=['POST'])
-def api_query():
-    if request.headers['Content-Type'] == 'application/json':
-        info_data = request.get_json(force=True, silent=True)
-        user_id = info_data.get('user_id', '')
-        password = info_data.get('password', '')
-
-        # format check
-        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': 'user_id format error'})
-        if not (isinstance(password, str) and len(password) >= 6):
-            return jsonify({'status': 'failed', 'message': 'password format error'})
-
-        # user_id exists check
-        c = get_db().cursor()
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if not ret:
-            return jsonify({'status': 'failed', 'message': 'user_id not exists'})
-        if not secret_check(password, ret[0][1]):
-            return jsonify({'status': 'failed', 'message': 'password not match'})
-        inviter, code, email, qq, wechat, taobao = ret[0][2:]
-
-        data = {'user_id': user_id, 'inviter': inviter, 'code': code,
-                'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao}
-        return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
-    return jsonify({'status': 'failed', 'message': 'json data format error'})
-
-
-# Mall Pages
-@app.route('/recommend', methods=['GET'])
-def page_recommend():
-    filename = os.path.join(current_path, 'recommend.html')
-    with codecs.open(filename, 'r', 'utf-8') as f:
-        return f.read()
-
-
-@app.route('/selfchoose', methods=['GET'])
-def page_self_choose():
-    filename = os.path.join(current_path, 'selfchoose.html')
-    with codecs.open(filename, 'r', 'utf-8') as f:
-        return f.read()
-
-
 @app.route('/inc', methods=['POST'])
 def inc():
     c = get_db().cursor()
-    c.execute("SELECT inviter FROM user_info WHERE user_id = 13800000000")
+    c.execute("SELECT qq FROM user_info WHERE user_id = 13800000000")
     inviter_row = c.fetchone()
     inviter = inviter_row[0]
     newValue = str(int(inviter)+1)
-    c.execute("UPDATE user_info SET inviter = ? WHERE user_id = 13800000000",(newValue,))
+    c.execute("UPDATE user_info SET qq = ? WHERE user_id = 13800000000",(newValue,))
     get_db().commit()
     return jsonify({'status': newValue})
 
@@ -198,11 +130,11 @@ def inc():
 @app.route('/dec', methods=['POST'])
 def dec():
     c = get_db().cursor()
-    c.execute("SELECT inviter FROM user_info WHERE user_id = 13800000000")
+    c.execute("SELECT qq FROM user_info WHERE user_id = 13800000000")
     inviter_row = c.fetchone()
     inviter = inviter_row[0]
     newValue = str(int(inviter)-1)
-    c.execute("UPDATE user_info SET inviter = ? WHERE user_id = 13800000000",(newValue,))
+    c.execute("UPDATE user_info SET qq = ? WHERE user_id = 13800000000",(newValue,))
     get_db().commit()
     return jsonify({'status': newValue})
 
