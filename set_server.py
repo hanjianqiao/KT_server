@@ -73,6 +73,61 @@ def secret_check(password, secret):
     return secret_pass(password) == secret
 
 
+@app.route('/registerbyid', methods=['POST'])
+def api_registerbyid():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+        password = info_data.get('password', '')
+        inviter = info_data.get('inviter', '')
+        email = info_data.get('email', '')
+        qq = info_data.get('qq', '')
+        wechat = info_data.get('wechat', '')
+        taobao = info_data.get('taobao', '')
+
+        # format check
+        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
+            return jsonify({'status': 'failed', 'message': 'user_id format error'})
+        if not (isinstance(inviter, str) and len(inviter) == 11 and all(map(lambda d: d.isdigit(), inviter))):
+            return jsonify({'status': 'failed', 'message': 'inviter format error'})
+        if not (isinstance(password, str) and len(password) >= 6):
+            return jsonify({'status': 'failed', 'message': 'password format error'})
+        if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
+            return jsonify({'status': 'failed', 'message': 'email format error'})
+
+        c = get_db().cursor()
+
+        # invitation code check
+        c.execute("SELECT user_id FROM user_info WHERE user_id=?", (inviter,))
+        inviter_row = c.fetchall()
+        if not inviter_row:
+            return jsonify({'status': 'failed', 'message': 'inviter not exist'})
+
+        # user_id exists check
+        c.execute("SELECT user_id FROM user_info WHERE user_id=?", (user_id,))
+        if c.fetchall():
+            return jsonify({'status': 'failed', 'message': 'user_id already exists'})
+
+        # email exists check
+        c.execute("SELECT email FROM user_info WHERE email=?", (email,))
+        if c.fetchall():
+            return jsonify({'status': 'failed', 'message': 'email already exists'})
+
+        # register user, and update inviter's invitee_total by add 1
+        secret = secret_pass(password)
+        c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (user_id, secret, inviter, '000000', email, qq, wechat, taobao, 'user', 'user', '2017', '01', '01', '0', '0', '0', '0', '0', '0', '0'))
+        c.execute("SELECT invitee_total FROM user_info WHERE user_id = ?",(inviter,))
+        inviter_row = c.fetchall()
+        invitee_total = inviter_row[0][0]
+        newValue = str(int(invitee_total)+1)
+        c.execute("UPDATE user_info SET invitee_total = ? WHERE user_id = ?",(newValue, inviter,))
+
+        get_db().commit()
+        return jsonify({'status': 'ok', 'message': 'register ok'})
+    return jsonify({'status': 'failed', 'message': 'json data format error'})
+
+
 @app.route('/register', methods=['POST'])
 def api_register():
     if request.headers['Content-Type'] == 'application/json':
@@ -99,10 +154,10 @@ def api_register():
 
         # invitation code check
         c.execute("SELECT user_id FROM user_info WHERE code=?", (code,))
-        inviter_row = c.fetchone()
+        inviter_row = c.fetchall()
         if not inviter_row:
             return jsonify({'status': 'failed', 'message': 'code not exist'})
-        inviter = inviter_row[0]
+        inviter = inviter_row[0][0]
 
         # user_id exists check
         c.execute("SELECT user_id FROM user_info WHERE user_id=?", (user_id,))
@@ -117,11 +172,10 @@ def api_register():
         # register user, and update inviter's invitee_total by add 1
         secret = secret_pass(password)
         c.execute("INSERT INTO user_info VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                  (user_id, secret, inviter, '000000', email, qq, wechat, taobao, 'user',
-                   'user', '2017', '01', '01', '0', '0', '0', '0', '0', '0', '0'))
+            (user_id, secret, inviter, '000000', email, qq, wechat, taobao, 'user', 'user', '2017', '01', '01', '0', '0', '0', '0', '0', '0', '0'))
         c.execute("SELECT invitee_total FROM user_info WHERE user_id = ?",(inviter,))
-        inviter_row = c.fetchone()
-        invitee_total = inviter_row[0]
+        inviter_row = c.fetchall()
+        invitee_total = inviter_row[0][0]
         newValue = str(int(invitee_total)+1)
         c.execute("UPDATE user_info SET invitee_total = ? WHERE user_id = ?",(newValue, inviter,))
 
@@ -143,19 +197,22 @@ def api_up2vip():
         c = get_db().cursor()
 
         # check inviter's remains
-        c.execute("SELECT inviter, balance FROM user_info WHERE userid = ?", (user_id,))
-        inviter_row = c.fetchone()
+        c.execute("SELECT inviter, balance, level FROM user_info WHERE user_id = ?", (user_id,))
+        inviter_row = c.fetchall()
         inviter = inviter_row[0][0]
         user_balance = inviter_row[0][1]
+        user_level = inviter_row[0][2]
+        if user_level != 'user':
+            return "You're already a VIP"
         if int(user_balance) < int(fee):
-            return 'balance'
+            return 'balance' + user_balance + ' ' + fee
         c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
-        inviter_row = c.fetchone()
+        inviter_row = c.fetchall()
         invitee_vip = inviter_row[0][0]
         invitation_remain = inviter_row[0][1]
         inviter_balance = inviter_row[0][2]
         if int(invitation_remain) < 1:
-            return 'remains'
+            return str(inviter)+' remains:'+str(invitation_remain)+' need:'+str(1)
         invitee_vip = str(int(invitee_vip)+1)
         invitation_remain = str(int(invitation_remain)-1)
         user_balance = str(int(user_balance)-int(fee))
@@ -163,8 +220,8 @@ def api_up2vip():
 
         # update user's infomation
         c.execute("SELECT expire_year FROM user_info WHERE user_id = 13900000000")
-        inviter_row = c.fetchone()
-        code = inviter_row[0]
+        inviter_row = c.fetchall()
+        code = inviter_row[0][0]
         newValue = str(int(code)+1)
         c.execute("UPDATE user_info SET expire_year = ? WHERE user_id = 13900000000",(newValue,))
         c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ?, expire_day = ?, code = ?, type = ?, level = ? WHERE user_id = ?",
@@ -190,18 +247,21 @@ def api_extendvip():
         c = get_db().cursor()
 
         # check inviter's remains
-        c.execute("SELECT inviter, balance FROM user_info WHERE userid = ?", (user_id,))
-        inviter_row = c.fetchone()
+        c.execute("SELECT inviter, balance, level FROM user_info WHERE user_id = ?", (user_id,))
+        inviter_row = c.fetchall()
         inviter = inviter_row[0][0]
         user_balance = inviter_row[0][1]
+        user_level = inviter_row[0][2]
+        if user_level == 'user':
+            return "Please upgrade to be a VIP first"
         if int(user_balance) < int(fee):
-            return 'balance'
+            return 'balance' + user_balance + ' ' + fee
         c.execute("SELECT extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
-        inviter_row = c.fetchone()
+        inviter_row = c.fetchall()
         extend_remain = inviter_row[0][0]
         inviter_balance = inviter_row[0][1]
         if int(extend_remain) < int(extend_month):
-            return 'remains'
+            return str(inviter)+' remains:'+str(extend_remain)+' need:'+str(extend_month)
         extend_remain = str(int(extend_remain)-int(extend_month))
         user_balance = str(int(user_balance)-int(fee))
         inviter_balance = str(int(inviter_balance)+int(fee))
@@ -209,7 +269,7 @@ def api_extendvip():
         # update user's infomation
         c.execute("SELECT expire_year, expire_month FROM user_info WHERE user_id= ?", (user_id,))
         ret = c.fetchall()
-        expire_year = str(int(ret[0][0])+(int(ret[0][1])-1+int(extend_month))/12)
+        expire_year = str(int(int(ret[0][0])+(int(ret[0][1])-1+int(extend_month))/12))
         expire_month = str((int(ret[0][1])-1+int(extend_month))%12+1)
         c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ? WHERE user_id = ?",
                                       (user_balance, expire_year, expire_month, user_id,))
@@ -235,22 +295,25 @@ def api_extendagent():
 
         c = get_db().cursor()
         # check inviter's remains
-        c.execute("SELECT inviter, balance FROM user_info WHERE userid = ?", (user_id,))
-        inviter_row = c.fetchone()
+        c.execute("SELECT inviter, balance, level FROM user_info WHERE user_id = ?", (user_id,))
+        inviter_row = c.fetchall()
         inviter = inviter_row[0][0]
         user_balance = inviter_row[0][1]
+        user_level = inviter_row[0][2]
+        if user_level == 'user':
+            return "Please upgrade to be a VIP first"
         if int(user_balance) < int(fee):
-            return 'balance'
+            return str(user_id)+' balance:' + str(user_balance) + ' need:' + str(fee)
         c.execute("SELECT invitee_agent, invitation_remain, extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
-        inviter_row = c.fetchone()
-        invitation_remain = inviter_row[0][0]
-        extend_remain = inviter_row[0][1]
-        invitee_agent = inviter_row[0][2]
+        inviter_row = c.fetchall()
+        invitee_agent = inviter_row[0][0]
+        invitation_remain = inviter_row[0][1]
+        extend_remain = inviter_row[0][2]
         inviter_balance = inviter_row[0][3]
         if int(invitation_remain) < int(invitation):
-            return 'remains'
+            return str(inviter)+' invitation_remain:'+str(invitation_remain)+' need:'+str(invitation)
         if int(extend_remain) < int(extend):
-            return 'remains'
+            return str(inviter)+' extend_remain:'+str(extend_remain)+' need:'+str(extend)
         invitation_remain = str(int(invitation_remain)-int(invitation))
         extend_remain = str(int(extend_remain)-int(extend))
         user_balance = str(int(user_balance)-int(fee))
@@ -258,18 +321,18 @@ def api_extendagent():
 
         # update user's infomation
         c.execute("SELECT invitation_remain, extend_remain, level FROM user_info WHERE user_id = ?",(user_id,))
-        inviter_row = c.fetchone()
+        inviter_row = c.fetchall()
         user_invitation_remain = str(int(inviter_row[0][0])+int(invitation))
         user_extend_remain = str(int(inviter_row[0][1])+int(extend))
         user_level = inviter_row[0][2]
         if user_level == 'vip':
             invitee_agent = str(int(invitee_agent)+1)
         c.execute("UPDATE user_info SET invitation_remain = ?, extend_remain = ?, level = ?, balance = ? WHERE user_id = ?",
-                  (user_invitation_remain, user_extend_remain, user_id, level, user_balance))
+                  (user_invitation_remain, user_extend_remain, level, user_balance, user_id))
 
         # update inviter's information
         c.execute("UPDATE user_info SET invitee_agent = ?, invitation_remain = ?, extend_remain = ?, balance = ? WHERE user_id = ?",
-                  (invitee_agent, invitation_remain, extend_remain, inviter, inviter_balance))
+                  (invitee_agent, invitation_remain, extend_remain, inviter_balance, inviter))
 
         get_db().commit()
         return jsonify({'status': 'ok', 'message': 'upgrade ok'})
@@ -285,12 +348,70 @@ def charge():
 
         c = get_db().cursor()
         c.execute("SELECT balance FROM user_info WHERE user_id = ?", (user_id,))
-        inviter_row = c.fetchone()
-        balance = inviter_row[0]
+        inviter_row = c.fetchall()
+        balance = inviter_row[0][0]
         newValue = str(int(balance)+int(amount))
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
         get_db().commit()
     return jsonify({'status': newValue})
+
+
+@app.route('/uplevel', methods=['POST'])
+def api_uplevel():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+
+        c = get_db().cursor()
+
+        # user info
+        c.execute("SELECT inviter, level FROM user_info WHERE user_id = ?", (user_id,))
+        inviter_row = c.fetchall()
+        inviter = inviter_row[0][0]
+        level = inviter_row[0][1]
+
+        # inviter and top inviter info
+        c.execute("SELECT inviter, invitee_total, invitee_vip, invitee_agent FROM user_info WHERE user_id = ?", (inviter,))
+        inviter_row = c.fetchall()
+        if inviter_row[0][0] == inviter:
+            return "You're under the system, no upgrading"
+        top_inviter = inviter_row[0][0]
+        invitee_total = inviter_row[0][1]
+        invitee_vip = inviter_row[0][2]
+        invitee_agent = inviter_row[0][3]
+        c.execute("SELECT inviter, invitee_total, invitee_vip, invitee_agent FROM user_info WHERE user_id = ?", (top_inviter,))
+        inviter_row = c.fetchall()
+        top_invitee_total = inviter_row[0][1]
+        top_invitee_vip = inviter_row[0][2]
+        top_invitee_agent = inviter_row[0][3]
+
+        # count number change
+        if level == 'user':
+            invitee_total = str(int(invitee_total)-1)
+            top_invitee_total = str(int(top_invitee_total)+1)
+        elif level == 'vip':
+            invitee_total = str(int(invitee_total)-1)
+            top_invitee_total = str(int(top_invitee_total)+1)
+            invitee_vip = str(int(invitee_vip)-1)
+            top_invitee_vip = str(int(top_invitee_vip)+1)
+        else:
+            invitee_total = str(int(invitee_total)-1)
+            top_invitee_total = str(int(top_invitee_total)+1)
+            invitee_vip = str(int(invitee_vip)-1)
+            top_invitee_vip = str(int(top_invitee_vip)+1)
+            invitee_agent = str(int(invitee_agent)-1)
+            top_invitee_agent = str(int(top_invitee_agent)+1)
+
+        # update user inviter and top_inviter
+        c.execute("UPDATE user_info SET inviter = ? WHERE user_id = ?",(top_inviter, user_id,))
+        c.execute("UPDATE user_info SET invitee_total = ?, invitee_vip = ?, invitee_agent = ? WHERE user_id = ?",
+            (invitee_total, invitee_vip, invitee_agent, inviter))
+        c.execute("UPDATE user_info SET invitee_total = ?, invitee_vip = ?, invitee_agent = ? WHERE user_id = ?",
+            (top_invitee_total, top_invitee_vip, top_invitee_agent, top_inviter))
+
+        get_db().commit()
+        return jsonify({'status': 'ok', 'message': 'uplevel ok'})
+    return jsonify({'status': 'failed'})
 
 
 if __name__ == '__main__':
