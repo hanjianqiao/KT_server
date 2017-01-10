@@ -9,7 +9,7 @@ connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10000, context
 
 headers = {'Content-type': 'application/json'}
 
-foo = {	'user_id': '13450000000',
+foo = {	'user_id': '13450000001',
 		'password':'123456',
 		'code':'100000',
 		'email':'1@0.0000',
@@ -32,7 +32,15 @@ connection.request('POST', '/charge', json_foo, headers)
 response = connection.getresponse()
 print(response.read().decode())
 
+connection.request('POST', '/up2vipinfo', json_foo, headers)
+response = connection.getresponse()
+print(response.read().decode())
+
 connection.request('POST', '/up2vip', json_foo, headers)
+response = connection.getresponse()
+print(response.read().decode())
+
+connection.request('POST', '/extendvipinfo', json_foo, headers)
 response = connection.getresponse()
 print(response.read().decode())
 
@@ -40,10 +48,10 @@ connection.request('POST', '/extendvip', json_foo, headers)
 response = connection.getresponse()
 print(response.read().decode())
 
-connection.request('POST', '/extendagent', json_foo, headers)
+connection.request('POST', '/extendagentinfo', json_foo, headers)
 response = connection.getresponse()
 print(response.read().decode())
 
-connection.request('POST', '/uplevel', json_foo, headers)
+connection.request('POST', '/extendagent', json_foo, headers)
 response = connection.getresponse()
 print(response.read().decode())

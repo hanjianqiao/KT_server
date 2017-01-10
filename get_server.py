@@ -271,6 +271,11 @@ def api_up2vip():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
+        
+        c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+        ret = c.fetchall()
+        if ret:
+            return 'You have something undergo: ' + ret[0][3]
 
         now = datetime.datetime.now()
         return up2vip(user_id, now.year, now.month, now.day, up2vipinfo['price'])
@@ -312,6 +317,11 @@ def api_extendvip():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
+        
+        c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+        ret = c.fetchall()
+        if ret:
+            return 'You have something undergo: ' + ret[0][3]
 
         return extendvip(user_id, extendvipinfo[combo]['month'], extendvipinfo[combo]['price'])
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -366,48 +376,15 @@ def api_extendagent():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
+        
+        c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+        ret = c.fetchall()
+        if ret:
+            return 'You have something undergo: ' + ret[0][3]
 
         return extendagent(user_id, extendagentinfo[combo]['level'], extendagentinfo[combo]['invite'], extendagentinfo[combo]['extend'], extendagentinfo[combo]['price'])
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
-
-@app.route('/uplevel', methods=['POST'])
-def api_uplevel():
-    if request.headers['Content-Type'] == 'application/json':
-        info_data = request.get_json(force=True, silent=True)
-        user_id = info_data.get('user_id', '')
-        password = info_data.get('password', '')
-
-        # format check
-        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': 'user_id format error'})
-        if not (isinstance(password, str) and len(password) >= 6):
-            return jsonify({'status': 'failed', 'message': 'password format error'})
-
-        # user_id exists check
-        c = get_db().cursor()
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if not ret:
-            return jsonify({'status': 'failed', 'message': 'user_id not exists'})
-        if not secret_check(password, ret[0][1]):
-            return jsonify({'status': 'failed', 'message': 'password not match'})
-
-        return uplevel(user_id)
-    return jsonify({'status': 'failed', 'message': 'json data format error'})
-
-
-@app.route('/test', methods=['GET'])
-def test_func():
-    context = ssl._create_unverified_context()
-    connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
-    headers = {'Content-type': 'application/json'}
-    #foo = {'text': 'Hello world github/linguist#1 **cool**, and #1!'}
-    #json_foo = json.dumps(foo)
-    json_foo = '{"user_id":"13450200000","password":"123456","code":"100000", "email":"1@2.com", "amount":"1000"}'
-    connection.request('POST', '/charge', json_foo, headers)
-    response = connection.getresponse()
-    return (response.read().decode())
 
 if __name__ == '__main__':
     context = ('server.crt', 'server.key')
