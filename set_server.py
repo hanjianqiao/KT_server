@@ -262,9 +262,9 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     user_balance = inviter_row[0][1]
     user_level = inviter_row[0][2]
     if user_level != 'user':
-        return "You're already a VIP"
+        return jsonify({'status': 'failed', 'message': 'you are already a vip'})
     if int(user_balance) < int(fee):
-        return 'balance' + user_balance + ' ' + fee
+        return jsonify({'status': 'failed', 'message': 'balance not enough'})
     c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
     inviter_row = c.fetchall()
     invitee_vip = inviter_row[0][0]
@@ -277,7 +277,7 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
-        return str(inviter)+' remains:'+str(invitation_remain)+' need:'+str(1)
+        return jsonify({'status': 'failed', 'message': str(inviter)+' remains:'+str(invitation_remain)+' need:'+str(1)})
     invitee_vip = str(int(invitee_vip)+1)
     invitation_remain = str(int(invitation_remain)-1)
     user_balance = str(int(user_balance)-int(fee))
@@ -297,7 +297,7 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
               (inviter_balance, invitee_vip, invitation_remain, inviter,))
 
     get_db().commit()
-    return 'sucess'
+    return jsonify({'status': 'ok', 'message': 'ok'})
 
 
 @app.route('/up2vip', methods=['POST'])
@@ -325,9 +325,9 @@ def extendvip(user_id, extend_month, fee, log):
     user_balance = inviter_row[0][1]
     user_level = inviter_row[0][2]
     if user_level == 'user':
-        return "Please upgrade to be a VIP first"
+        return jsonify({'status': 'failed', 'message': 'Please upgrade to be a VIP first'})
     if int(user_balance) < int(fee):
-        return 'balance' + user_balance + ' ' + fee
+        return jsonify({'status': 'failed', 'message': 'balance' + user_balance + ' ' + str(fee)})
     c.execute("SELECT extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
     inviter_row = c.fetchall()
     extend_remain = inviter_row[0][0]
@@ -339,7 +339,7 @@ def extendvip(user_id, extend_month, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (user_id, inviter, 'extendvip', str(0), extend_month, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
-        return str(inviter)+' remains:'+str(extend_remain)+' need:'+str(extend_month)
+        return jsonify({'status': 'failed', 'message': str(inviter)+' remains:'+str(extend_remain)+' need:'+str(extend_month)})
     extend_remain = str(int(extend_remain)-int(extend_month))
     user_balance = str(int(user_balance)-int(fee))
     inviter_balance = str(int(inviter_balance)+int(fee))
@@ -357,7 +357,7 @@ def extendvip(user_id, extend_month, fee, log):
               (inviter_balance, extend_remain, inviter,))
 
     get_db().commit()
-    return 'sucess'
+    return jsonify({'status': 'ok', 'message': 'ok'})
 
 
 @app.route('/extendvip', methods=['POST'])
@@ -382,9 +382,9 @@ def extendagent(user_id, level, invitation, extend, fee, log):
     user_balance = inviter_row[0][1]
     user_level = inviter_row[0][2]
     if user_level == 'user':
-        return "Please upgrade to be a VIP first"
+        return jsonify({'status': 'failed', 'message': "Please upgrade to be a VIP first"})
     if int(user_balance) < int(fee):
-        return str(user_id)+' balance:' + str(user_balance) + ' need:' + str(fee)
+        return jsonify({'status': 'failed', 'message': str(user_id)+' balance:' + str(user_balance) + ' need:' + str(fee)})
     c.execute("SELECT invitee_agent, invitation_remain, extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
     inviter_row = c.fetchall()
     invitee_agent = inviter_row[0][0]
@@ -398,7 +398,7 @@ def extendagent(user_id, level, invitation, extend, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (user_id, inviter, level, invitation, extend, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
-        return str(inviter)+' invitation_remain:'+str(invitation_remain)+' need:'+str(invitation) + '' + str(inviter)+' extend_remain:'+str(extend_remain)+' need:'+str(extend)
+        return jsonify({'status': 'failed', 'message': str(inviter)+' invitation_remain:'+str(invitation_remain)+' need:'+str(invitation) + '' + str(inviter)+' extend_remain:'+str(extend_remain)+' need:'+str(extend)})
     invitation_remain = str(int(invitation_remain)-int(invitation))
     extend_remain = str(int(extend_remain)-int(extend))
     user_balance = str(int(user_balance)-int(fee))
@@ -420,7 +420,7 @@ def extendagent(user_id, level, invitation, extend, fee, log):
               (invitee_agent, invitation_remain, extend_remain, inviter_balance, inviter))
 
     get_db().commit()
-    return 'sucess'
+    return jsonify({'status': 'ok', 'message': 'ok'})
 
 @app.route('/extendagent', methods=['POST'])
 def api_extendagent():
@@ -451,9 +451,10 @@ def charge():
         newValue = str(int(balance)+int(amount))
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
         get_db().commit()
-    return jsonify({'status': newValue})
+    return jsonify({'status': 'ok', 'message': newValue})
 
 
+@app.route('/hourlycheck', methods=['POST'])
 def hourlycheck():
         c = get_db().cursor()
         c.execute("SELECT * FROM deal_info")
@@ -461,7 +462,12 @@ def hourlycheck():
         for row in rows:
             if row[3] == 'up2vip':
                 now = datetime.datetime.now()
-                des_time = now + datetime.timedelta(month=1)
+                year = now.year
+                month = now.month
+                day = now.day
+                year += int(month/12)
+                month = month%12+1
+                des_time = datetime.date(year, month, day)
                 if up2vip(row[1], des_time.year, des_time.month, des_time.day, row[6], False) == 'sucess':
                     c.execute("DELETE FROM deal_info WHERE deal_id = ?",(row[0],))
                     get_db().commit()
@@ -473,7 +479,7 @@ def hourlycheck():
                 if extendagent(row[1], row[3], row[4], row[5], row[6], False) == 'sucess':
                     c.execute("DELETE FROM deal_info WHERE deal_id = ?",(row[0],))
                     get_db().commit()
-
+        return jsonify({'status': 'Hourly Checked'})
 
 
 if __name__ == '__main__':

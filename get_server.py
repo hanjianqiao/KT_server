@@ -156,37 +156,43 @@ def api_register():
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
-@app.route('/query', methods=['POST'])
+@app.route('/query', methods=['GET'])
 def api_query():
-    if request.headers['Content-Type'] == 'application/json':
-        info_data = request.get_json(force=True, silent=True)
-        user_id = info_data.get('user_id', '')
-        password = info_data.get('password', '')
+    info_data = request.get_json(force=True, silent=True)
+    user_id = request.args.get('id')
+    password = request.args.get('pwd')
 
-        # format check
-        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': 'user_id format error'})
-        if not (isinstance(password, str) and len(password) >= 6):
-            return jsonify({'status': 'failed', 'message': 'password format error'})
+    # format check
+    if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
+        return jsonify({'status': 'failed', 'message': 'user_id format error'})
+    if not (isinstance(password, str) and len(password) >= 6):
+        return jsonify({'status': 'failed', 'message': 'password format error'})
 
-        # user_id exists check
-        c = get_db().cursor()
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if not ret:
-            return jsonify({'status': 'failed', 'message': 'user_id not exists'})
-        if not secret_check(password, ret[0][1]):
-            return jsonify({'status': 'failed', 'message': 'password not match'})
-        inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month, expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip, invitee_agent, team_total = ret[0][2:]
+    # user_id exists check
+    c = get_db().cursor()
+    c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
+    ret = c.fetchall()
+    if not ret:
+        return jsonify({'status': 'failed', 'message': 'user_id not exists'})
+    if not secret_check(password, ret[0][1]):
+        return jsonify({'status': 'failed', 'message': 'password not match'})
+    inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month, expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip, invitee_agent, team_total = ret[0][2:]
 
-        data = {'user_id': user_id, 'inviter': inviter, 'code': code,
-                'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao, 'type': type,
-                'level': level, 'expire_year': expire_year, 'expire_month': expire_month,
-                'expire_day': expire_day, 'balance': balance, 'invitation_remain': invitation_remain,
-                'extend_remain': extend_remain, 'invitee_total': invitee_total, 'invitee_vip': invitee_vip,
-                'invitee_agent': invitee_agent, 'team_total': team_total}
-        return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
-    return jsonify({'status': 'failed', 'message': 'json data format error'})
+    c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+    ret = c.fetchall()
+    wait = ''
+    if ret:
+        wait = ret[0][3]
+    else:
+        wait = 'none'
+
+    data = {'user_id': user_id, 'inviter': inviter, 'code': code,
+            'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao, 'type': type,
+            'level': level, 'expire_year': expire_year, 'expire_month': expire_month,
+            'expire_day': expire_day, 'balance': balance, 'invitation_remain': invitation_remain,
+            'extend_remain': extend_remain, 'invitee_total': invitee_total, 'invitee_vip': invitee_vip,
+            'invitee_agent': invitee_agent, 'team_total': team_total, 'wait': wait}
+    return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
 
 
 @app.route('/login', methods=['POST'])
@@ -210,7 +216,23 @@ def api_login():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
-        return jsonify({'status': 'ok', 'message': 'login ok'})
+        inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month, expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip, invitee_agent, team_total = ret[0][2:]
+
+        c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+        ret = c.fetchall()
+        wait = ''
+        if ret:
+            wait = ret[0][3]
+        else:
+            wait = 'none'
+
+        data = {'user_id': user_id, 'inviter': inviter, 'code': code,
+                'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao, 'type': type,
+                'level': level, 'expire_year': expire_year, 'expire_month': expire_month,
+                'expire_day': expire_day, 'balance': balance, 'invitation_remain': invitation_remain,
+                'extend_remain': extend_remain, 'invitee_total': invitee_total, 'invitee_vip': invitee_vip,
+                'invitee_agent': invitee_agent, 'team_total': team_total, 'wait': wait}
+        return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
@@ -275,10 +297,10 @@ def api_up2vip():
         c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         if ret:
-            return 'You have something undergo: ' + ret[0][3]
+            return jsonify({'status': 'failed', 'message': 'You have something undergo: ' + ret[0][3]})
 
         now = datetime.datetime.now()
-        return up2vip(user_id, now.year, now.month, now.day, up2vipinfo['price'])
+        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), up2vipinfo['price'])
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
@@ -301,7 +323,7 @@ def api_extendvip():
         info_data = request.get_json(force=True, silent=True)
         user_id = info_data.get('user_id', '')
         password = info_data.get('password', '')
-        combo = info_data.get('combo', '')
+        month = info_data.get('month', '')
 
         # format check
         if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
@@ -317,34 +339,88 @@ def api_extendvip():
             return jsonify({'status': 'failed', 'message': 'user_id not exists'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': 'password not match'})
-        
+
         c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         if ret:
-            return 'You have something undergo: ' + ret[0][3]
+            return jsonify({'status': 'failed', 'message': 'You have something undergo: ' + ret[0][3]})
 
-        return extendvip(user_id, extendvipinfo[combo]['month'], extendvipinfo[combo]['price'])
+        return extendvip(user_id, month, str(int(month)*89))
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
 extendagentinfo = {
         '1':{
             'level':'level1',
-            'invite':'1',
-            'extend':'1',
-            'price':'200'
+            'invite':'10',
+            'extend':'0',
+            'price':'1380'
         },
         '2':{
-            'level':'level10',
-            'invite':'10',
+            'level':'level1',
+            'invite':'0',
             'extend':'10',
-            'price':'2000'
+            'price':'590'
         },
         '3':{
-            'level':'level100',
+            'level':'level2',
+            'invite':'30',
+            'extend':'0',
+            'price':'3240'
+        },
+        '4':{
+            'level':'level2',
+            'invite':'0',
+            'extend':'30',
+            'price':'1470'
+        },
+        '5':{
+            'level':'level3',
             'invite':'100',
+            'extend':'0',
+            'price':'8800'
+        },
+        '6':{
+            'level':'level3',
+            'invite':'0',
             'extend':'100',
-            'price':'20000'
+            'price':'3900'
+        },
+        '7':{
+            'level':'level4',
+            'invite':'300',
+            'extend':'0',
+            'price':'21900'
+        },
+        '8':{
+            'level':'level4',
+            'invite':'0',
+            'extend':'300',
+            'price':'10200'
+        },
+        '9':{
+            'level':'level5',
+            'invite':'1000',
+            'extend':'0',
+            'price':'63000'
+        },
+        '10':{
+            'level':'level5',
+            'invite':'0',
+            'extend':'1000',
+            'price':'29000'
+        },
+        '11':{
+            'level':'level6',
+            'invite':'5000',
+            'extend':'0',
+            'price':'290000'
+        },
+        '12':{
+            'level':'level6',
+            'invite':'0',
+            'extend':'5000',
+            'price':'120000'
         }
     }
 

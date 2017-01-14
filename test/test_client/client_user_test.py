@@ -9,9 +9,9 @@ connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10000, context
 
 headers = {'Content-type': 'application/json'}
 
-foo = {	'user_id': '13450000001',
+foo = {	'user_id': '13450000002',
 		'password':'123456',
-		'code':'100000',
+		'code':'100001',
 		'email':'1@0.0000',
 		'combo':'1'}
 json_foo = json.dumps(foo)
