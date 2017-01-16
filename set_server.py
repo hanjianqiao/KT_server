@@ -6,6 +6,8 @@ import hashlib
 import sqlite3
 from flask import *
 import datetime
+import ast
+import sys
 
 app = Flask(__name__)
 
@@ -456,30 +458,30 @@ def charge():
 
 @app.route('/hourlycheck', methods=['POST'])
 def hourlycheck():
-        c = get_db().cursor()
-        c.execute("SELECT * FROM deal_info")
-        rows = c.fetchall()
-        for row in rows:
-            if row[3] == 'up2vip':
-                now = datetime.datetime.now()
-                year = now.year
-                month = now.month
-                day = now.day
-                year += int(month/12)
-                month = month%12+1
-                des_time = datetime.date(year, month, day)
-                if up2vip(row[1], des_time.year, des_time.month, des_time.day, row[6], False) == 'sucess':
-                    c.execute("DELETE FROM deal_info WHERE deal_id = ?",(row[0],))
-                    get_db().commit()
-            elif row[3] == 'extendvip':
-                if extendvip(row[1], row[5], row[6], False) == 'sucess':
-                    c.execute("DELETE FROM deal_info WHERE deal_id = ?",(row[0],))
-                    get_db().commit()
-            else:
-                if extendagent(row[1], row[3], row[4], row[5], row[6], False) == 'sucess':
-                    c.execute("DELETE FROM deal_info WHERE deal_id = ?",(row[0],))
-                    get_db().commit()
-        return jsonify({'status': 'Hourly Checked'})
+    c = get_db().cursor()
+    c.execute("SELECT * FROM deal_info")
+    rows = c.fetchall()
+    for row in rows:
+        status = ''
+        if row[3] == 'up2vip':
+            now = datetime.datetime.now()
+            year = now.year
+            month = now.month
+            day = now.day
+            year += int(month/12)
+            month = month%12+1
+            des_time = datetime.date(year, month, day)
+            status = ast.literal_eval(up2vip(row[1], des_time.year, des_time.month, des_time.day, row[6], False).get_data().decode("utf-8"))
+        elif row[3] == 'extendvip':
+            status = ast.literal_eval(extendvip(row[1], row[5], row[6], False).get_data().decode("utf-8"))
+        else:
+            status = ast.literal_eval(extendagent(row[1], row[3], row[4], row[5], row[6], False).get_data().decode("utf-8"))
+        if status['status'] == 'ok':
+            c.execute("DELETE FROM deal_info WHERE deal_id = ?",(row[0],))
+            get_db().commit()
+        else:
+            print(status, file=sys.stderr)
+    return jsonify({'status': 'Hourly Checked'})
 
 
 if __name__ == '__main__':

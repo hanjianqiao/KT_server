@@ -158,7 +158,6 @@ def api_register():
 
 @app.route('/query', methods=['GET'])
 def api_query():
-    info_data = request.get_json(force=True, silent=True)
     user_id = request.args.get('id')
     password = request.args.get('pwd')
 
@@ -456,7 +455,7 @@ def api_extendagent():
         c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         if ret:
-            return 'You have something undergo: ' + ret[0][3]
+            return jsonify({'status': 'failed', 'message': 'You have something undergo: ' + ret[0][3]})
 
         return extendagent(user_id, extendagentinfo[combo]['level'], extendagentinfo[combo]['invite'], extendagentinfo[combo]['extend'], extendagentinfo[combo]['price'])
     return jsonify({'status': 'failed', 'message': 'json data format error'})
