@@ -16,7 +16,7 @@ class myThread (threading.Thread):
         self.counter = counter
     def run(self):
         context = ssl._create_unverified_context()
-        connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
+        connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 10010, context = context)
         headers = {'Content-type': 'application/json'}
         foo = { 'user_id': '13450000002'}
         json_foo = json.dumps(foo)
@@ -36,7 +36,7 @@ class myThread2 (threading.Thread):
         self.counter = counter
     def run(self):
         context = ssl._create_unverified_context()
-        connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 30000, context = context)
+        connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 30000, context = context)
         headers = {'Content-type': 'application/json'}
         foo = { 'user_id': '13450000002'}
         json_foo = json.dumps(foo)

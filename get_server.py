@@ -10,7 +10,7 @@ import ssl
 from flask import *
 import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/A', static_folder='../html/static/simple/')
 
 current_path = os.path.dirname(__file__)
 database_folder = os.path.join(current_path, 'database')
@@ -462,6 +462,6 @@ def api_extendagent():
 
 
 if __name__ == '__main__':
-    context = ('server.crt', 'server.key')
+    context = ('2_user.hanjianqiao.cn.crt', '3_user.hanjianqiao.cn.key')
     app.run(host='0.0.0.0', port=10000, ssl_context=context)
     #app.run(host='0.0.0.0', port=3000)
