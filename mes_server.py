@@ -34,6 +34,10 @@ def get_db():
                                         date TEXT,
                                         body TEXT)
                 """)
+            c.execute("""
+                CREATE TABLE user_status (  user_id TEXT,
+                                            isThere TEXT)
+                """)
         db.commit()
     return db
 
@@ -47,22 +51,39 @@ def close_connection(exception):
 
 @app.route('/add', methods=['POST'])
 def add():
-    c = get_db().cursor()
-    now = datetime.datetime.now()
-    c.execute("INSERT INTO user_info (user_id, title, date, body) VALUES (?, ?, ?, ?)",
-                  ('0', '问候', now.strftime("%Y-%m-%d %H:%M"), now.strftime("你好！\n%H点%M分快乐！"),))
-    get_db().commit()
-    return jsonify({'status': 'ok', 'message': 'ok'})
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        userid = info_data.get('userid', '')
+        title = info_data.get('title', '')
+        body = info_data.get('body', '')
+        c = get_db().cursor()
+        now = datetime.datetime.now()
+        c.execute("INSERT INTO user_info (user_id, title, date, body) VALUES (?, ?, ?, ?)",
+                      (userid, title, now.strftime("%Y-%m-%d %H:%M"), body,))
+
+        c.execute("SELECT * FROM user_status WHERE user_id = ?", (userid,))
+        users = c.fetchall()
+        if len(users) == 0:
+            c.execute("INSERT INTO user_status (user_id, isThere) VALUES (?, ?)", (userid, 'yes'))
+        else:
+            c.execute("UPDATE user_status SET isThere = ? where user_id = ?", ('yes',userid,))
+        get_db().commit()
+        return jsonify({'status': 'ok', 'message': 'ok'})
+    return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
 @app.route('/list', methods=['GET'])
 def api_list():
+    id = request.args.get('userid')
     c = get_db().cursor()
-    c.execute("SELECT * FROM user_info")
+    c.execute("SELECT * FROM user_info where user_id = ?", (id,))
     rows = c.fetchall()
     ret = []
     for row in rows:
-        ret.append({'title': row[2]+str(row[0]), 'id': row[0]})
+        ret.append({'title': row[2], 'id': row[0]})
+
+    c.execute("UPDATE user_status SET isThere = ? where user_id = ?", ('no',id,))
+    get_db().commit()
 
     return jsonify({'status': 'ok',
                     'message': ret
@@ -71,12 +92,16 @@ def api_list():
 
 @app.route('/check', methods=['POST'])
 def api_check():
-    c = get_db().cursor()
-    c.execute("SELECT * FROM sqlite_sequence")
-    row = c.fetchone()
-    return jsonify({'status': 'ok',
-                    'message': row[1]
-                })
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        userid = info_data.get('user_id', '')
+        c = get_db().cursor()
+        c.execute("SELECT * FROM user_status WHERE user_id = ?", (userid,))
+        row = c.fetchone()
+        return jsonify({'status': 'ok',
+                        'message': row[1]
+                    })
+    return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
 @app.route('/detail', methods=['GET'])
@@ -97,6 +122,6 @@ def api_detail():
 
 
 if __name__ == '__main__':
-    context = ('2_user.hanjianqiao.cn.crt', '3_user.hanjianqiao.cn.key')
+    context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
     app.run(host='0.0.0.0', port=30000, ssl_context=context)
     #app.run(host='0.0.0.0', port=3000)

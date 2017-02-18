@@ -455,6 +455,24 @@ def charge():
         get_db().commit()
     return jsonify({'status': 'ok', 'message': newValue})
 
+@app.route('/drawback', methods=['POST'])
+def drawback():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+        amount = info_data.get('amount', '')
+
+        c = get_db().cursor()
+        c.execute("SELECT balance FROM user_info WHERE user_id = ?", (user_id,))
+        inviter_row = c.fetchall()
+        balance = inviter_row[0][0]
+        if(int(balance)<int(amount))
+            return jsonify({'status': 'failed', 'message': 'balance not enough'})
+        newValue = str(int(balance)-int(amount))
+        c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
+        get_db().commit()
+    return jsonify({'status': 'ok', 'message': newValue})
+
 
 @app.route('/hourlycheck', methods=['POST'])
 def hourlycheck():
@@ -485,6 +503,6 @@ def hourlycheck():
 
 
 if __name__ == '__main__':
-    context = ('2_user.hanjianqiao.cn.crt', '3_user.hanjianqiao.cn.key')
+    context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
     app.run(host='0.0.0.0', port=10010, ssl_context=context)
     #app.run(host='0.0.0.0', port=2000)

@@ -26,7 +26,7 @@ def register(userid, password, code, email, qq, wechat, taobao):
     # create user
     # create a unverified https connection to set server
     context = ssl._create_unverified_context()
-    connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 10010, context = context)
     foo = { "user_id":userid,
             "password":password,
             "code":code,
@@ -45,7 +45,7 @@ def charge(userid, amount):
     # charge user
     # create a unverified https connection to set server
     context = ssl._create_unverified_context()
-    connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 10010, context = context)
     foo = { "user_id":userid,
             "amount":amount}
     json_foo = json.dumps(foo)
@@ -59,7 +59,7 @@ def uplevel(userid):
     # charge user
     # create a unverified https connection to set server
     context = ssl._create_unverified_context()
-    connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 10010, context = context)
     foo = { "user_id":userid}
     json_foo = json.dumps(foo)
     connection.request('POST', '/uplevel', json_foo, headers)
@@ -72,7 +72,7 @@ def up2vip(userid, year, month, day, fee):
     # vip user
     # create a unverified https connection to set server
     context = ssl._create_unverified_context()
-    connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 10010, context = context)
     foo = { "user_id":userid,
             "expire_year":year,
             "expire_month":month,
@@ -89,7 +89,7 @@ def extendvip(userid, extend_month, fee):
    # extend vip user
     # create a unverified https connection to set server
     context = ssl._create_unverified_context()
-    connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 10010, context = context)
     foo = { "user_id":userid,
             "extend_month":extend_month,
             "fee":fee}
@@ -104,7 +104,7 @@ def extendagent(userid, level, invitation, extend, fee):
     # agent user
     # create a unverified https connection to set server
     context = ssl._create_unverified_context()
-    connection = http.client.HTTPSConnection('secure.hanjianqiao.cn', 10010, context = context)
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 10010, context = context)
     foo = { "user_id":userid,
             "level":level,
             "invitation":invitation,
@@ -462,6 +462,6 @@ def api_extendagent():
 
 
 if __name__ == '__main__':
-    context = ('2_user.hanjianqiao.cn.crt', '3_user.hanjianqiao.cn.key')
+    context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
     app.run(host='0.0.0.0', port=10000, ssl_context=context)
     #app.run(host='0.0.0.0', port=3000)

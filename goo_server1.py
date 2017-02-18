@@ -15,13 +15,13 @@ current_path = os.path.dirname(__file__)
 database_folder = os.path.join(current_path, 'database')
 if not os.path.exists(database_folder):
     os.mkdir(database_folder)
-database_path = os.path.join(database_folder, 'good.db')
+database_path = os.path.join(database_folder, 'good1.db')
 
 
 def get_db():
-    db = getattr(g, '_goodatabase', None)
+    db = getattr(g, '_good1atabase', None)
     if db is None:
-        db = g._goodatabase = sqlite3.connect(database_path)
+        db = g._good1atabase = sqlite3.connect(database_path)
 
         c = db.cursor()
         c.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -29,6 +29,10 @@ def get_db():
         if not table_list:
             c.execute("""
                 CREATE TABLE user_info (good_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        catalog TEXT,
+                                        off TEXT,
+                                        rate TEXT,
+                                        sell TEXT,
                                         title TEXT,
                                         image TEXT,
                                         comment TEXT,
@@ -42,7 +46,7 @@ def get_db():
 
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_goodatabase', None)
+    db = getattr(g, '_good1atabase', None)
     if db is not None:
         db.close()
 
@@ -50,6 +54,10 @@ def close_connection(exception):
 def api_add():
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
+        catalog = info_data.get('catalog', '')
+        off = info_data.get('off', '')
+        rate = info_data.get('rate', '')
+        sell = info_data.get('sell', '')
         title = info_data.get('title', '')
         image = info_data.get('image', '')
         comment = info_data.get('comment', '')
@@ -57,8 +65,8 @@ def api_add():
         url = info_data.get('url', '')
         c = get_db().cursor()
         now = datetime.datetime.now()
-        c.execute("INSERT INTO user_info (title, image, comment, price, url, modify) VALUES (?, ?, ?, ?, ?, ?)",
-                      (title, image, comment, price, url, now.strftime("%Y-%m-%d %H:%M"),))
+        c.execute("INSERT INTO user_info (catalog, off, rate, sell, title, image, comment, price, url, modify) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                      (catalog, off, rate, sell, title, image, comment, price, url, now.strftime("%Y-%m-%d %H:%M"),))
         get_db().commit()
         return jsonify({'status': 'ok', 'message': 'ok'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -68,12 +76,12 @@ def api_add():
 def api_search():
     key = request.args.get('key')
     c = get_db().cursor()
-    c.execute("SELECT * FROM user_info WHERE comment LIKE ?", ("%"+str(key)+"%",))
+    c.execute("SELECT * FROM user_info WHERE catalog = ?", (key,))
     rows = c.fetchall()
     ret = []
     for row in rows:
-        good_id, title, image, comment, price, url, modify = row[0:]
-        ret.append({'good_id': good_id, 'title': title, 'image': image, 'comment': comment, 'price': price, 'url': url, 'modify': modify})
+        good_id, catalog, off, rate, sell, title, image, comment, price, url, modify = row[0:]
+        ret.append({'good_id': good_id, 'off': off, 'rate': rate, 'sell': sell, 'title': title, 'image': image, 'comment': comment, 'price': price, 'url': url, 'modify': modify})
     return jsonify({'status': 'ok',
                     'message': ret
                 })
@@ -87,7 +95,7 @@ def api_query():
     rows = c.fetchall()
     ret = []
     for row in rows:
-        good_id, title, image, comment, price, url, modify = row[0:]
+        good_id, catalog, off, rate, sell, title, image, comment, price, url, modify = row[0:]
         ret.append({'good_id': good_id, 'title': title, 'image': image, 'comment': comment, 'price': price, 'url': url, 'modify': modify})
     return jsonify({'status': 'ok',
                     'message': ret
@@ -96,5 +104,5 @@ def api_query():
 
 if __name__ == '__main__':
     context = ('sslcrts/2_shop.hanjianqiao.cn.crt', 'sslcrts/3_shop.hanjianqiao.cn.key')
-    app.run(host='0.0.0.0', port=30001, ssl_context=context)
+    app.run(host='0.0.0.0', port=30002, ssl_context=context)
     #app.run(host='0.0.0.0', port=3000)
