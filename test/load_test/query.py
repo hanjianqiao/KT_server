@@ -31,7 +31,7 @@ def print_time(tpath, id_from, inviter_code):
 threads = []
 
 for i in range(400):
-    threads.append(myThread("https://user.hanjianqiao.cn:10000/query?id=13450205512&pwd=1hanjianqiao", 13450200000+i*20, "666666"))
+    threads.append(myThread("http://secure.hanjianqiao.cn/search?catalog=1", 13450200000+i*20, "666666"))
 
 for t in threads:
     t.start()

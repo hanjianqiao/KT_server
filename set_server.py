@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import random
@@ -7,6 +8,8 @@ import sqlite3
 from flask import *
 import datetime
 import ast
+import ssl
+import http.client
 import sys
 
 app = Flask(__name__)
@@ -16,6 +19,39 @@ database_folder = os.path.join(current_path, 'database')
 if not os.path.exists(database_folder):
     os.mkdir(database_folder)
 database_path = os.path.join(database_folder, 'user_info.db')
+
+# headers
+headers = {'Content-type': 'application/json'}
+
+def mes2user(userid, title, body):
+    # charge user
+    # create a unverified https connection to set server
+    context = ssl._create_unverified_context()
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 30000, context = context)
+    foo = {  'userid': userid,
+        'title':title,
+        'body':body}
+    json_foo = json.dumps(foo)
+    connection.request('POST', '/add', json_foo, headers)
+    response = connection.getresponse()
+    ret = (response.read().decode())
+    connection.close()
+    return ret
+
+def mes2bil(userid, action, amount):
+    # charge user
+    # create a unverified https connection to set server
+    context = ssl._create_unverified_context()
+    connection = http.client.HTTPSConnection('user.hanjianqiao.cn', 40000, context = context)
+    foo = {  'userid': userid,
+        'action':action,
+        'amount':amount}
+    json_foo = json.dumps(foo)
+    connection.request('POST', '/add', json_foo, headers)
+    response = connection.getresponse()
+    ret = (response.read().decode())
+    connection.close()
+    return ret
 
 
 def get_db():
@@ -27,6 +63,9 @@ def get_db():
         c.execute("SELECT name FROM sqlite_master WHERE type='table';")
         table_list = c.fetchall()
         if not table_list:
+            c.execute("CREATE TABLE role ( id INTEGER NOT NULL, name VARCHAR(80), description VARCHAR(255), PRIMARY KEY (id), UNIQUE (name) )")
+            c.execute("CREATE TABLE roles_users ( user_id INTEGER, role_id INTEGER, FOREIGN KEY(user_id) REFERENCES user (id), FOREIGN KEY(role_id) REFERENCES role (id) )")
+            c.execute("CREATE TABLE user ( id INTEGER NOT NULL, first_name VARCHAR(255), last_name VARCHAR(255), email VARCHAR(255), password VARCHAR(255), active BOOLEAN, confirmed_at DATETIME, PRIMARY KEY (id), UNIQUE (email), CHECK (active IN (0, 1)) )")
             c.execute("""
                 CREATE TABLE user_info (user_id TEXT,
                                         password TEXT,
@@ -104,7 +143,7 @@ def api_uplevel(user_id):
     c.execute("SELECT inviter, invitee_total, invitee_vip, invitee_agent FROM user_info WHERE user_id = ?", (inviter,))
     inviter_row = c.fetchall()
     if inviter_row[0][0] == inviter:
-        return "You're under the system, no upgrading"
+        return jsonify({'status': 'falied', 'message': 'You\'re under the system, no upgrading'})
     top_inviter = inviter_row[0][0]
     invitee_total = inviter_row[0][1]
     invitee_vip = inviter_row[0][2]
@@ -140,6 +179,9 @@ def api_uplevel(user_id):
         (top_invitee_total, top_invitee_vip, top_invitee_agent, top_inviter))
 
     get_db().commit()
+    mes2user(top_inviter, '获得转入邀请', user_id+'已成为您的下级')
+    mes2user(user_id, '上级变更', '您的上级已变更为：'+top_inviter)
+    mes2user(inviter, '失去下级', '您已失去下级：'+user_id)
     return jsonify({'status': 'ok', 'message': 'uplevel ok'})
 
 
@@ -212,13 +254,13 @@ def api_register():
 
         # format check
         if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': 'user_id format error'})
+            return jsonify({'status': 'failed', 'message': '用户名格式错误'})
         if not (isinstance(password, str) and len(password) >= 6):
             return jsonify({'status': 'failed', 'message': 'password format error'})
         if not (isinstance(code, str) and len(code) == 6 and all(map(lambda d: d.isdigit(), code))):
-            return jsonify({'status': 'failed', 'message': 'code format error'})
+            return jsonify({'status': 'failed', 'message': '邀请码格式错误'})
         if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
-            return jsonify({'status': 'failed', 'message': 'email format error'})
+            return jsonify({'status': 'failed', 'message': '邮件格式错误'})
 
         c = get_db().cursor()
 
@@ -226,18 +268,18 @@ def api_register():
         c.execute("SELECT user_id FROM user_info WHERE code=?", (code,))
         inviter_row = c.fetchall()
         if not inviter_row:
-            return jsonify({'status': 'failed', 'message': 'code not exist'})
+            return jsonify({'status': 'failed', 'message': '邀请码不存在'})
         inviter = inviter_row[0][0]
 
         # user_id exists check
         c.execute("SELECT user_id FROM user_info WHERE user_id=?", (user_id,))
         if c.fetchall():
-            return jsonify({'status': 'failed', 'message': 'user_id already exists'})
+            return jsonify({'status': 'failed', 'message': '用户名已存在'})
 
         # email exists check
         c.execute("SELECT email FROM user_info WHERE email=?", (email,))
         if c.fetchall():
-            return jsonify({'status': 'failed', 'message': 'email already exists'})
+            return jsonify({'status': 'failed', 'message': '邮箱已被注册'})
 
         # register user, and update inviter's invitee_total by add 1
         secret = secret_pass(password)
@@ -248,9 +290,11 @@ def api_register():
         invitee_total = inviter_row[0][0]
         newValue = str(int(invitee_total)+1)
         c.execute("UPDATE user_info SET invitee_total = ? WHERE user_id = ?",(newValue, inviter,))
-
         get_db().commit()
-        return jsonify({'status': 'ok', 'message': 'register ok'})
+
+        mes2user(user_id, '欢迎加入小牛快淘', '欢迎加入小牛快淘,加入VIP可使用更多功能')
+        mes2user(inviter, '邀请增加', '用户已通过您的邀请码进行注册：'+user_id)
+        return jsonify({'status': 'ok', 'message': '注册成功'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
@@ -264,9 +308,9 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     user_balance = inviter_row[0][1]
     user_level = inviter_row[0][2]
     if user_level != 'user':
-        return jsonify({'status': 'failed', 'message': 'you are already a vip'})
+        return jsonify({'status': 'failed', 'message': '你已经是VIP'})
     if int(user_balance) < int(fee):
-        return jsonify({'status': 'failed', 'message': 'balance not enough'})
+        return jsonify({'status': 'failed', 'message': '余额不足'})
     c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
     inviter_row = c.fetchall()
     invitee_vip = inviter_row[0][0]
@@ -279,7 +323,7 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
-        return jsonify({'status': 'failed', 'message': str(inviter)+' remains:'+str(invitation_remain)+' need:'+str(1)})
+        return jsonify({'status': 'failed', 'message': '用户'+str(inviter)+'剩余VIP邀请不足'})
     invitee_vip = str(int(invitee_vip)+1)
     invitation_remain = str(int(invitation_remain)-1)
     user_balance = str(int(user_balance)-int(fee))
@@ -299,7 +343,11 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
               (inviter_balance, invitee_vip, invitation_remain, inviter,))
 
     get_db().commit()
-    return jsonify({'status': 'ok', 'message': 'ok'})
+    mes2user(user_id, '恭喜升级VIP', '欢迎加入VIP，现在请使用佣金及优惠券查询功能')
+    mes2user(inviter, '下级升级VIP', '您的下级已升级为VIP：'+user_id)
+    mes2bil(user_id, '购买VIP', '-'+fee)
+    mes2bil(inviter, '售出邀请名额', '+'+fee)
+    return jsonify({'status': 'ok', 'message': '购买VIP成功'})
 
 
 @app.route('/up2vip', methods=['POST'])
@@ -341,7 +389,7 @@ def extendvip(user_id, extend_month, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (user_id, inviter, 'extendvip', str(0), extend_month, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
-        return jsonify({'status': 'failed', 'message': str(inviter)+' remains:'+str(extend_remain)+' need:'+str(extend_month)})
+        return jsonify({'status': 'failed', 'message': '用户'+str(inviter)+'续费次数不足'})
     extend_remain = str(int(extend_remain)-int(extend_month))
     user_balance = str(int(user_balance)-int(fee))
     inviter_balance = str(int(inviter_balance)+int(fee))
@@ -359,7 +407,12 @@ def extendvip(user_id, extend_month, fee, log):
               (inviter_balance, extend_remain, inviter,))
 
     get_db().commit()
-    return jsonify({'status': 'ok', 'message': 'ok'})
+
+    mes2user(user_id, '成功延长VIP', '您的VIP延长了'+extend_month+'个月')
+    mes2user(inviter, '售出延长VIP', '您的下级VIP延长'+extend_month+'个月')
+    mes2bil(user_id, 'VIP延长'+extend_month+'个月', '-'+fee)
+    mes2bil(inviter, '售出VIP延长'+extend_month+'个月', '+'+fee)
+    return jsonify({'status': 'ok', 'message': '续费成功'})
 
 
 @app.route('/extendvip', methods=['POST'])
@@ -384,7 +437,7 @@ def extendagent(user_id, level, invitation, extend, fee, log):
     user_balance = inviter_row[0][1]
     user_level = inviter_row[0][2]
     if user_level == 'user':
-        return jsonify({'status': 'failed', 'message': "Please upgrade to be a VIP first"})
+        return jsonify({'status': 'failed', 'message': "请先购买VIP"})
     if int(user_balance) < int(fee):
         return jsonify({'status': 'failed', 'message': str(user_id)+' balance:' + str(user_balance) + ' need:' + str(fee)})
     c.execute("SELECT invitee_agent, invitation_remain, extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
@@ -422,7 +475,11 @@ def extendagent(user_id, level, invitation, extend, fee, log):
               (invitee_agent, invitation_remain, extend_remain, inviter_balance, inviter))
 
     get_db().commit()
-    return jsonify({'status': 'ok', 'message': 'ok'})
+    mes2user(user_id, '新增套餐', '增加邀请次数：' + invitation + '次\n' + '增加续费次数：' + extend + '次')
+    mes2user(inviter, '售出套餐', '售出邀请次数：' + invitation + '次\n' + '售出续费次数：' + extend + '次')
+    mes2bil(user_id, '购买套餐', '-'+fee)
+    mes2bil(inviter, '售出套餐', '+'+fee)
+    return jsonify({'status': 'ok', 'message': '套餐购买成功'})
 
 @app.route('/extendagent', methods=['POST'])
 def api_extendagent():
@@ -446,13 +503,20 @@ def charge():
         user_id = info_data.get('user_id', '')
         amount = info_data.get('amount', '')
 
+        # user_id exists check
         c = get_db().cursor()
+        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
+        ret = c.fetchall()
+        if not ret:
+            return jsonify({'status': 'failed', 'message': '用户名不存在'})
         c.execute("SELECT balance FROM user_info WHERE user_id = ?", (user_id,))
         inviter_row = c.fetchall()
         balance = inviter_row[0][0]
         newValue = str(int(balance)+int(amount))
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
         get_db().commit()
+        mes2user(user_id, '充值成功', '充值金额：'+amount+'元')
+        mes2bil(user_id, '充值', '+'+amount)
     return jsonify({'status': 'ok', 'message': newValue})
 
 @app.route('/drawback', methods=['POST'])
@@ -462,15 +526,22 @@ def drawback():
         user_id = info_data.get('user_id', '')
         amount = info_data.get('amount', '')
 
+        # user_id exists check
         c = get_db().cursor()
+        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
+        ret = c.fetchall()
+        if not ret:
+            return jsonify({'status': 'failed', 'message': '用户名不存在'})
         c.execute("SELECT balance FROM user_info WHERE user_id = ?", (user_id,))
         inviter_row = c.fetchall()
         balance = inviter_row[0][0]
-        if(int(balance)<int(amount))
-            return jsonify({'status': 'failed', 'message': 'balance not enough'})
+        if(int(balance)<int(amount)):
+            return jsonify({'status': 'failed', 'message': '余额不足'})
         newValue = str(int(balance)-int(amount))
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
         get_db().commit()
+        mes2user(user_id, '提现成功', '提现金额：'+amount+'元')
+        mes2bil(user_id, '提现', '-'+amount)
     return jsonify({'status': 'ok', 'message': newValue})
 
 
@@ -503,6 +574,6 @@ def hourlycheck():
 
 
 if __name__ == '__main__':
-    context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
-    app.run(host='0.0.0.0', port=10010, ssl_context=context)
-    #app.run(host='0.0.0.0', port=2000)
+    #context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
+    #app.run(host='0.0.0.0', port=10010, ssl_context=context)
+    app.run(port=10010)

@@ -9,11 +9,11 @@ connection = http.client.HTTPSConnection('shop.hanjianqiao.cn', 30002, context =
 
 headers = {'Content-type': 'application/json'}
 
-foo = {	'catalog': '1',
-		'off': '39',
-		'rate': '2',
-		'sell': '9',
-		'title': '狗狗零食',
+foo = {	'catalog': '0',
+		'off': '90',
+		'rate': '3',
+		'sell': '900',
+		'title': '狗狗零食,推荐商品',
 		'image':'https://img.alicdn.com/bao/uploaded/i4/TB1xwMgPXXXXXcNXFXXXXXXXXXX_!!0-item_pic.jpg_430x430q90.jpg',
 		'comment':'狗狗零食1300g大礼包泰迪宠物磨牙棒咬胶骨头幼犬牛肉条粒鸡胸肉',
 		'price':'123.00',
