@@ -259,8 +259,8 @@ def api_register():
             return jsonify({'status': 'failed', 'message': 'password format error'})
         if not (isinstance(code, str) and len(code) == 6 and all(map(lambda d: d.isdigit(), code))):
             return jsonify({'status': 'failed', 'message': '邀请码格式错误'})
-        if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
-            return jsonify({'status': 'failed', 'message': '邮件格式错误'})
+        #if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
+        #    return jsonify({'status': 'failed', 'message': '邮件格式错误'})
 
         c = get_db().cursor()
 
@@ -277,9 +277,9 @@ def api_register():
             return jsonify({'status': 'failed', 'message': '用户名已存在'})
 
         # email exists check
-        c.execute("SELECT email FROM user_info WHERE email=?", (email,))
-        if c.fetchall():
-            return jsonify({'status': 'failed', 'message': '邮箱已被注册'})
+        #c.execute("SELECT email FROM user_info WHERE email=?", (email,))
+        #if c.fetchall():
+        #    return jsonify({'status': 'failed', 'message': '邮箱已被注册'})
 
         # register user, and update inviter's invitee_total by add 1
         secret = secret_pass(password)
