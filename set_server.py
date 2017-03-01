@@ -587,7 +587,7 @@ def hourlycheck():
             else:
                 continue
             api_uplevel(row[1])
-            print(status, file=sys.stderr)
+            #print(status, file=sys.stderr)
     return jsonify({'status': 'Hourly Checked'})
 
 

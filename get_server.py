@@ -134,12 +134,12 @@ def secret_check(password, secret):
 
 @app.route('/register', methods=['POST'])
 def api_register():
-    print(request.data)
+    #print(request.data)
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
         if info_data is None:
             strtmp=parse.unquote(request.data)
-            print(strtmp)
+            #print(strtmp)
             return jsonify({'status': 'failed', 'message': request.data})
         user_id = info_data.get('user_id', '')
         password = info_data.get('password', '')
@@ -193,7 +193,7 @@ def api_query():
 
 @app.route('/login', methods=['POST'])
 def api_login():
-    print(request.data)
+    #print(request.data)
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
         user_id = info_data.get('user_id', '')
