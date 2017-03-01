@@ -233,34 +233,8 @@ def api_login():
     return jsonify({'status': 'failed', 'message': '请求格式错误'})
 
 
-@app.route('/charge', methods=['POST'])
-def api_charge():
-    if request.headers['Content-Type'] == 'application/json':
-        info_data = request.get_json(force=True, silent=True)
-        user_id = info_data.get('user_id', '')
-        password = info_data.get('password', '')
-
-        # format check
-        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': 'user_id format error'})
-        if not (isinstance(password, str) and len(password) >= 6):
-            return jsonify({'status': 'failed', 'message': 'password format error'})
-
-        # user_id exists check
-        c = get_db().cursor()
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if not ret:
-            return jsonify({'status': 'failed', 'message': 'user_id not exists'})
-        if not secret_check(password, ret[0][1]):
-            return jsonify({'status': 'failed', 'message': 'password not match'})
-
-        return charge(user_id, '1000')
-    return jsonify({'status': 'failed', 'message': 'json data format error'})
-
-
 up2vipinfo = {
-    'price':'198'
+    'price':'298'
 }
 
 
