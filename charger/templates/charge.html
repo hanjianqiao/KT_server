@@ -1,0 +1,15 @@
+{% block body %}
+{% if not session['logged_in'] %}
+<p>You're not logged in!</p>
+{% else %}
+<form action="/add" method="POST">
+  用户名：<input type="text" name="userid"><br>
+  金额：<input type="text" name="amount"><br>
+  <input type="radio" name="action" value="0" checked> 充值  
+  <input type="radio" name="action" value="1"> 提现 <br><br>
+  <input type="submit" value="确定">
+</form>
+<a href="/logout"><button onclick="/logout">安全退出</button></a><br>
+<span>{{ data }}</span>
+{% endif %}
+{% endblock %}

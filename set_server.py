@@ -292,7 +292,7 @@ def api_register():
         c.execute("UPDATE user_info SET invitee_total = ? WHERE user_id = ?",(newValue, inviter,))
         get_db().commit()
 
-        mes2user(user_id, '欢迎加入小牛快淘', '欢迎加入小牛快淘,加入VIP可使用更多功能')
+        mes2user(user_id, '欢迎加入小牛快淘！', '欢迎加入快淘大家庭，如有任何疑问，请关注并咨询微信公众号“小牛快淘”，会有专业人员为您服务，我们更支持你的梦想！')
         mes2user(inviter, '邀请增加', '用户已通过您的邀请码进行注册：'+user_id)
         return jsonify({'status': 'ok', 'message': '注册成功'})
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -323,6 +323,7 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
+            mes2user(inviter, '请增购套餐', '用户'+user_id+'需要升级VIP，您的剩余邀请已不足')
         return jsonify({'status': 'failed', 'message': '用户'+str(inviter)+'剩余VIP邀请不足'})
     invitee_vip = str(int(invitee_vip)+1)
     invitation_remain = str(int(invitation_remain)-1)
@@ -389,6 +390,7 @@ def extendvip(user_id, extend_month, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (user_id, inviter, 'extendvip', str(0), extend_month, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
+            mes2user(inviter, '请增购套餐', '用户'+user_id+'需要延长VIP'+extend_month+'个月，您的剩余套餐已不足')
         return jsonify({'status': 'failed', 'message': '用户'+str(inviter)+'续费次数不足'})
     extend_remain = str(int(extend_remain)-int(extend_month))
     user_balance = str(int(user_balance)-int(fee))
@@ -453,6 +455,7 @@ def extendagent(user_id, level, invitation, extend, fee, log):
             c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (user_id, inviter, level, invitation, extend, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(20)))
             get_db().commit()
+            mes2user(inviter, '请增购套餐', '用户'+user_id+'需要增购套餐'+extend+'个续费，'+invitation+'个邀请，您的剩余套餐已不足')
         return jsonify({'status': 'failed', 'message': str(inviter)+' invitation_remain:'+str(invitation_remain)+' need:'+str(invitation) + '' + str(inviter)+' extend_remain:'+str(extend_remain)+' need:'+str(extend)})
     invitation_remain = str(int(invitation_remain)-int(invitation))
     extend_remain = str(int(extend_remain)-int(extend))
@@ -569,6 +572,21 @@ def hourlycheck():
             c.execute("DELETE FROM deal_info WHERE deal_id = ?",(row[0],))
             get_db().commit()
         else:
+            now = datetime.datetime.now()
+            if int(ret[7]) >= now.year:
+                if int(ret[8]) >= now.month:
+                    if int(ret[9]) >= now.day:
+                        if int(ret[10]) >= now.hour:
+                            pass
+                        else:
+                            continue
+                    else:
+                        continue
+                else:
+                    continue
+            else:
+                continue
+            api_uplevel(row[1])
             print(status, file=sys.stderr)
     return jsonify({'status': 'Hourly Checked'})
 

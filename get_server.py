@@ -11,7 +11,8 @@ from flask import *
 import datetime
 from urllib import parse
 
-app = Flask(__name__, static_url_path='/A', static_folder='../html/static/simple/')
+# app = Flask(__name__, static_url_path='/A', static_folder='../html/static/simple/')
+app = Flask(__name__)
 
 current_path = os.path.dirname(__file__)
 database_folder = os.path.join(current_path, 'database')
@@ -340,7 +341,7 @@ def api_extendvip():
         if ret:
             return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
 
-        return extendvip(user_id, month, str(int(month)*89))
+        return extendvip(user_id, month, str(int(month)*168))
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
@@ -349,73 +350,73 @@ extendagentinfo = {
             'level':'level1',
             'invite':'10',
             'extend':'0',
-            'price':'1380'
+            'price':'2180'
         },
         '2':{
             'level':'level1',
             'invite':'0',
             'extend':'10',
-            'price':'590'
+            'price':'1280'
         },
         '3':{
             'level':'level2',
             'invite':'30',
             'extend':'0',
-            'price':'3240'
+            'price':'5040'
         },
         '4':{
             'level':'level2',
             'invite':'0',
             'extend':'30',
-            'price':'1470'
+            'price':'2940'
         },
         '5':{
             'level':'level3',
             'invite':'100',
             'extend':'0',
-            'price':'8800'
+            'price':'13800'
         },
         '6':{
             'level':'level3',
             'invite':'0',
             'extend':'100',
-            'price':'3900'
+            'price':'7800'
         },
         '7':{
             'level':'level4',
             'invite':'300',
             'extend':'0',
-            'price':'21900'
+            'price':'35400'
         },
         '8':{
             'level':'level4',
             'invite':'0',
             'extend':'300',
-            'price':'10200'
+            'price':'20400'
         },
         '9':{
             'level':'level5',
             'invite':'1000',
             'extend':'0',
-            'price':'63000'
+            'price':'108000'
         },
         '10':{
             'level':'level5',
             'invite':'0',
             'extend':'1000',
-            'price':'29000'
+            'price':'58000'
         },
         '11':{
             'level':'level6',
             'invite':'5000',
             'extend':'0',
-            'price':'290000'
+            'price':'490000'
         },
         '12':{
             'level':'level6',
             'invite':'0',
             'extend':'5000',
-            'price':'120000'
+            'price':'240000'
         }
     }
 
