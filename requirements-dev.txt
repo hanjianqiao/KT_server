@@ -16,3 +16,6 @@ sphinx
 sphinx-intl
 coveralls
 pylint
+flask_security
+flask_admin
+xlrd
