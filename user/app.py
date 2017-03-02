@@ -68,7 +68,7 @@ class DealInfo(db.Model):
     end_month = db.Column(db.Text)
     end_day = db.Column(db.Text)
     end_hour = db.Column(db.Text)
-    end_minite = db.Column(db.Text)
+    end_minute = db.Column(db.Text)
     interval = db.Column(db.Text)
 
 
@@ -182,7 +182,7 @@ admin = flask_admin.Admin(
 
 # Add model views
 #admin.add_view(MyModelView(Role, db.session))
-#admin.add_view(MyModelView(User, db.session))
+admin.add_view(MyModelView(DealInfo, db.session))
 admin.add_view(MyModelView2(UserInfo, db.session))
 
 

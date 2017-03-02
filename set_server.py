@@ -587,6 +587,11 @@ def hourlycheck():
             else:
                 continue
             api_uplevel(row[1])
+            now = datetime.datetime.now()
+            des_time = now + datetime.timedelta(hours=8)
+            c.execute("UPDATE deal_info SET end_year = ?, end_month = ?, end_day = ? WHERE deal_id = ?",
+                (str(des_time.year), str(des_time.month), str(des_time.day), row[0],))
+            get_db().commit()
             #print(status, file=sys.stderr)
     return jsonify({'status': 'Hourly Checked'})
 

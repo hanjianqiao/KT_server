@@ -182,7 +182,7 @@ def api_detail():
 # Create admin
 admin = flask_admin.Admin(
     app,
-    u'小牛快淘系统消息后台管理',
+    u'小牛快淘账单后台管理',
     base_template='my_master.html',
     template_mode='bootstrap3',
 )
