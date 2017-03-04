@@ -435,5 +435,5 @@ def api_extendagent():
 
 if __name__ == '__main__':
     context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
-    app.run(host='0.0.0.0', port=10000, ssl_context=context)
+    app.run(host='0.0.0.0', port=10000, ssl_context=context, debug=True)
     #app.run(host='0.0.0.0', port=3000)

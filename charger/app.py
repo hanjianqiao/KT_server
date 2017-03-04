@@ -245,5 +245,5 @@ if __name__ == '__main__':
     #add_admin_user()
     # Start app
     context = ('/home/lct/user.server/sslcrts/2_user.hanjianqiao.cn.crt', '/home/lct/user.server/sslcrts/3_user.hanjianqiao.cn.key')
-    app.run(host='0.0.0.0', port=2100, ssl_context=context)
+    app.run(host='0.0.0.0', port=2100, ssl_context=context, debug=True)
     #app.run(host='0.0.0.0', port=2100, debug=True)

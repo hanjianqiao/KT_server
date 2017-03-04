@@ -599,4 +599,4 @@ def hourlycheck():
 if __name__ == '__main__':
     #context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
     #app.run(host='0.0.0.0', port=10010, ssl_context=context)
-    app.run(port=10010)
+    app.run(port=10010, debug=True)

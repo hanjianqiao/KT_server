@@ -145,6 +145,17 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/upload')
+def upload_page():
+    if not current_user.is_active or not current_user.is_authenticated:
+        return redirect(url_for('security.login', next='/'))
+
+    if current_user.has_role('superuser'):
+         return render_template('upload.html')
+
+    return redirect(url_for('security.login', next='/'))
+
+
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
     if not current_user.is_active or not current_user.is_authenticated:

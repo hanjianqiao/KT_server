@@ -206,4 +206,4 @@ if __name__ == '__main__':
     # Start app
     #context = ('/home/lct/user.server/sslcrts/2_user.hanjianqiao.cn.crt', '/home/lct/user.server/sslcrts/3_user.hanjianqiao.cn.key')
     #app.run(host='0.0.0.0', port=40000, ssl_context=context)
-    app.run(host='0.0.0.0', port=13420, debug=False)
+    app.run(host='0.0.0.0', port=13420, debug=True)

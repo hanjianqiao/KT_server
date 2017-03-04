@@ -308,6 +308,6 @@ if __name__ == '__main__':
         build_sample_db()
     #add_admin_user()
     # Start app
-    context = ('/home/lct/user.server/sslcrts/2_shop.hanjianqiao.cn.crt', '/home/lct/user.server/sslcrts/3_shop.hanjianqiao.cn.key')
+    #context = ('/home/lct/user.server/sslcrts/2_shop.hanjianqiao.cn.crt', '/home/lct/user.server/sslcrts/3_shop.hanjianqiao.cn.key')
     #app.run(host='0.0.0.0', port=7009, ssl_context=context)
     app.run(host='0.0.0.0', port=7008, debug=True)
