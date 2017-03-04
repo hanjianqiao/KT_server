@@ -187,7 +187,46 @@ def upload_file():
 @app.route('/search', methods=['GET'])
 def api_search():
     key = request.args.get('key')
-    rows = GoodInfo.query.filter(GoodInfo.title.contains(urllib.parse.unquote(key))).all()
+    offset = request.args.get('offset')
+    if offset == None:
+        offset = '0'
+    offset = int(offset)
+    limit = request.args.get('limit')
+    if limit == None:
+        limit = '20'
+    limit = int(limit)
+    originStr = urllib.parse.unquote(key)
+    targetStr = []
+    for s in originStr:
+        if s != ' ':
+            targetStr.append(s)
+            if len(targetStr) >=10:
+                break
+    rows = []
+    if len(targetStr) == 0:
+        rows = []
+    elif len(targetStr) == 1:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 2:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 3:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 4:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 5:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 6:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 7:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 8:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 9:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%')).offset(offset).limit(limit).all()
+    elif len(targetStr) == 10:
+        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%'),GoodInfo.title.like('%'+targetStr[9]+'%')).offset(offset).limit(limit).all()
+    else:
+        ret = []
     ret = []
     for row in rows:
         ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
@@ -200,7 +239,7 @@ def api_search():
 @app.route('/query', methods=['GET'])
 def api_query():
     id = request.args.get('id')
-    rows = GoodInfo.query.filter_by(good_id=id).limit(40).all()
+    rows = GoodInfo.query.filter_by(good_id=id).all()
     ret = []
     for row in rows:
         ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,

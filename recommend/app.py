@@ -14,6 +14,7 @@ from flask.ext.admin.contrib.sqla import filters
 import ssl
 from flask_babelex import Babel
 import urllib
+from xlrd import open_workbook
 
 
 
@@ -144,23 +145,56 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/uploader', methods = ['GET', 'POST'])
+def upload_file():
+    if not current_user.is_active or not current_user.is_authenticated:
+        return redirect(url_for('security.login', next='/'))
+    if current_user.has_role('superuser'):
+        if request.method == 'POST':
+            print(u'你好')
+            file = request.files['file']
+            if file.filename == '':
+                return u'未选择文件'
+            else:
+                file.save('tmp9s0d9.xls')
+                wb = open_workbook('tmp9s0d9.xls')
+                for sheet in wb.sheets():
+                    number_of_rows = sheet.nrows
+                    number_of_columns = sheet.ncols
+
+                    items = []
+
+                    rows = []
+                    for row in range(1, number_of_rows):
+                        values = []
+                        item = GoodInfo(title=sheet.cell(row,0).value, catalog=sheet.cell(row,1).value, activity=sheet.cell(row,2).value,
+                            off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
+                            url=sheet.cell(row,6).value, price=sheet.cell(row,7).value, sell=sheet.cell(row,8).value)
+                        db.session.add(item)
+                    db.session.commit()
+                    os.remove('tmp9s0d9.xls')
+                return u'上传成功'
+        return u'Hello'
+    return redirect(url_for('security.login', next='/'))
+
+
 @app.route('/search', methods=['GET'])
 def api_search():
     catalog = request.args.get('catalog')
-    rows = GoodInfo.query.filter_by(catalog=catalog).all()
-    ret = []
-    for row in rows:
-        ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
-                    'price': row.price, 'url': row.url, 'off': row.off, 'rate': row.rate})
-    return jsonify({'status': 'ok',
-                    'message': ret
-                })
-
-
-@app.route('/activity', methods=['GET'])
-def api_activity():
     activity = request.args.get('activity')
-    rows = GoodInfo.query.filter_by(activity=activity).all()
+    offset = request.args.get('offset')
+    if offset == None:
+        offset = '0'
+    offset = int(offset)
+    limit = request.args.get('limit')
+    if limit == None:
+        limit = '20'
+    limit = int(limit)
+    rows = []
+    if(activity == '0'):
+        rows = GoodInfo.query.filter_by(catalog=catalog).offset(offset).limit(limit).all()
+    else:
+        GoodInfo.query.filter_by(activity=activity).offset(offset).limit(limit).all()
     ret = []
     for row in rows:
         ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
