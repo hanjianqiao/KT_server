@@ -24,7 +24,7 @@ class myThread (threading.Thread):
         while(1):
             connection.request('POST', '/hourlycheck', json_foo, headers)
             response = connection.getresponse()
-            print(response.read().decode(), file=sys.stderr)
+            print(response.read().decode())
             time.sleep(1800+int(random.random()*1000))
 
 
