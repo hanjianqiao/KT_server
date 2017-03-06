@@ -101,7 +101,7 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['good_id', 'title', 'image', 'price', 'orprice', 'url']
+    list_columns = ['good_id', 'title', 'image', 'price', 'sell', 'url']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     column_sortable_list = ()

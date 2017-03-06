@@ -103,6 +103,21 @@ security = Security(app, user_datastore)
 
 # Create customized model view class
 class MyModelView(sqla.ModelView):
+    # Visible columns in the list view
+    #column_exclude_list = ['team_total']
+    list_columns = ['deal_id', 'user_id', 'inviter_id', 'type', 'need_invite', 'need_extend', 'fee',
+                    'end_year', 'end_month', 'end_day', 'end_hour', 'end_minute', 'interval']
+    # List of columns that can be sorted. For 'user' column, use User.username as
+    # a column.
+    column_sortable_list = ()
+
+    # Rename 'title' columns to 'Post Title' in list view
+    column_labels = dict(   deal_id=u'处理ID', user_id=u'用户名', inviter_id=u'上级', type=u'事件类型', need_invite=u'需要邀请', need_extend=u'需要续费', fee=u'总价',
+                            end_year=u'截止年份', end_month=u'截止月份', end_day=u'截止日', end_hour=u'截止小时', end_minute=u'截止分钟', interval=u'等待时间')
+
+    column_searchable_list = ('inviter_id',)
+
+    column_filters = ('user_id',)
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:
@@ -211,8 +226,8 @@ def add_admin_user():
 
         test_user = user_datastore.create_user(
             first_name='poiuy',
-            email='poiuy@xiaoniukuaitao.com',
-            password=encrypt_password('1234567890'),
+            email='thisisadmin',
+            password=encrypt_password('helloadmin009'),
             roles=[user_role, super_user_role]
         )
 

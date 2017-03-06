@@ -265,10 +265,10 @@ def api_up2vip():
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': '密码错误'})
         
-        c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if ret:
-            return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
+        # c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+        # ret = c.fetchall()
+        # if ret:
+        #     return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
 
         now = datetime.datetime.now()
         return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), up2vipinfo['price'])
@@ -311,10 +311,10 @@ def api_extendvip():
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': '密码错误'})
 
-        c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if ret:
-            return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
+        # c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+        # ret = c.fetchall()
+        # if ret:
+        #     return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
 
         return extendvip(user_id, month, str(int(month)*168))
     return jsonify({'status': 'failed', 'message': 'json data format error'})
@@ -424,10 +424,28 @@ def api_extendagent():
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': '密码错误'})
         
-        c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if ret:
-            return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
+        # c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+        # ret = c.fetchall()
+        # if ret:
+        #     oriReason = ret[0][3]
+        #     reason = '请联系客服'
+        #     if oriReason == 'up2vip':
+        #         reason = '升级VIP'
+        #     elif oriReason == 'extendvip':
+        #         reason = '续费VIP'
+        #     elif oriReason == 'level1':
+        #         reason = '购买铜牌套餐'
+        #     elif oriReason == 'level2':
+        #         reason = '购买银牌套餐'
+        #     elif oriReason == 'level3':
+        #         reason = '购金牌套餐'
+        #     elif oriReason == 'level4':
+        #         reason = '购买铂金套餐'
+        #     elif oriReason == 'level5':
+        #         reason = '购买钻石套餐'
+        #     elif oriReason == 'level6':
+        #         reason = '购买总代理套餐'
+        #     return jsonify({'status': 'failed', 'message': '未完成：' + reason})
 
         return extendagent(user_id, extendagentinfo[combo]['level'], extendagentinfo[combo]['invite'], extendagentinfo[combo]['extend'], extendagentinfo[combo]['price'])
     return jsonify({'status': 'failed', 'message': 'json data format error'})

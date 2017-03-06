@@ -15,6 +15,7 @@ import ssl
 from flask_babelex import Babel
 import urllib
 from xlrd import open_workbook
+from decimal import Decimal
 
 
 
@@ -178,7 +179,17 @@ def upload_file():
                     rows = []
                     for row in range(1, number_of_rows):
                         values = []
-                        item = GoodInfo(title=sheet.cell(row,0).value, catalog=sheet.cell(row,1).value, activity=sheet.cell(row,2).value,
+                        catalog = sheet.cell(row,1).value
+                        if(catalog==''):
+                            catalog = int(0)
+                        else:
+                            catalog = int(catalog)
+                        activity = sheet.cell(row,2).value
+                        if(activity==''):
+                            activity = int(0)
+                        else:
+                            activity = int(activity)
+                        item = GoodInfo(title=sheet.cell(row,0).value, catalog=catalog, activity=activity,
                             off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
                             url=sheet.cell(row,6).value, price=sheet.cell(row,7).value, sell=sheet.cell(row,8).value)
                         db.session.add(item)
@@ -205,7 +216,7 @@ def api_search():
     if(activity == '0'):
         rows = GoodInfo.query.filter_by(catalog=catalog).offset(offset).limit(limit).all()
     else:
-        GoodInfo.query.filter_by(activity=activity).offset(offset).limit(limit).all()
+        rows = GoodInfo.query.filter_by(activity=activity).offset(offset).limit(limit).all()
     ret = []
     for row in rows:
         ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
