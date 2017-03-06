@@ -20,6 +20,8 @@ if not os.path.exists(database_folder):
     os.mkdir(database_folder)
 database_path = os.path.join(database_folder, 'user_info.db')
 
+deltaHour = 2
+
 # headers
 headers = {'Content-type': 'application/json'}
 
@@ -319,9 +321,9 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
 
     if int(invitation_remain) < 1:
         now = datetime.datetime.now()
-        des_time = now + datetime.timedelta(hours=21)
+        des_time = now + datetime.timedelta(hours=deltaHour)
         c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(21)))
+        (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHour)))
         get_db().commit()
         mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买1个邀请，0个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
     else:
@@ -386,9 +388,9 @@ def extendvip(user_id, extend_month, fee, log):
     inviter_balance = inviter_row[0][1]
     if int(extend_remain) < int(extend_month):
         now = datetime.datetime.now()
-        des_time = now + datetime.timedelta(hours=21)
+        des_time = now + datetime.timedelta(hours=deltaHour)
         c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, inviter, 'extendvip', str(0), extend_month, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(21)))
+            (user_id, inviter, 'extendvip', str(0), extend_month, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHour)))
         get_db().commit()
         mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买0个邀请，'+extend_month+'个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
     else:
@@ -451,9 +453,9 @@ def extendagent(user_id, level, invitation, extend, fee, log):
     inviter_balance = inviter_row[0][3]
     if int(invitation_remain) < int(invitation) or int(extend_remain) < int(extend):
         now = datetime.datetime.now()
-        des_time = now + datetime.timedelta(hours=21)
+        des_time = now + datetime.timedelta(hours=deltaHour)
         c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, inviter, level, invitation, extend, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(21)))
+            (user_id, inviter, level, invitation, extend, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHour)))
         get_db().commit()
         mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买'+invitation+'个邀请，'+extend+'个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
     else:
@@ -583,22 +585,22 @@ def hourlycheck():
         else:
             now = datetime.datetime.now()
             should_upleve = False
-            if int(row[7]) > now.year:
+            if int(row[7]) < now.year:
                 should_upleve = True
             elif int(row[7]) == now.year:
-                if int(row[8]) > now.month:
+                if int(row[8]) < now.month:
                     should_upleve = True
                 elif int(row[8]) == now.month:
-                    if int(row[9]) > now.day:
+                    if int(row[9]) < now.day:
                         should_upleve = True
                     elif int(row[9]) == now.day:
-                        if int(row[10]) >= now.hour:
+                        if int(row[10]) <= now.hour:
                             should_upleve = True
 
             if should_upleve == True:
                 api_uplevel(user_id, invitation, extend)
                 now = datetime.datetime.now()
-                des_time = now + datetime.timedelta(hours=21)
+                des_time = now + datetime.timedelta(hours=deltaHour)
                 c.execute("UPDATE deal_info SET end_year = ?, end_month = ?, end_day = ? WHERE deal_id = ?",
                     (str(des_time.year), str(des_time.month), str(des_time.day), deal_id,))
 
