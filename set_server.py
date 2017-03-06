@@ -586,12 +586,12 @@ def hourlycheck():
             if int(row[7]) > now.year:
                 should_upleve = True
             elif int(row[7]) == now.year:
-                if int(row[8] > now.month):
+                if int(row[8]) > now.month):
                     should_upleve = True
-                elif int(row[8] == now.month):
+                elif int(row[8]) == now.month):
                     if int(row[9]) > now.day:
                         should_upleve = True
-                    elif int(row[9] == now.day):
+                    elif int(row[9]) == now.day):
                         if int(row[10]) >= now.hour:
                             should_upleve = True
 
