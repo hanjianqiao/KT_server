@@ -20,7 +20,8 @@ if not os.path.exists(database_folder):
     os.mkdir(database_folder)
 database_path = os.path.join(database_folder, 'user_info.db')
 
-deltaHour = 2
+deltaHours = 20
+deltaMinutes = 10
 
 # headers
 headers = {'Content-type': 'application/json'}
@@ -321,9 +322,9 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
 
     if int(invitation_remain) < 1:
         now = datetime.datetime.now()
-        des_time = now + datetime.timedelta(hours=deltaHour)
+        des_time = now + datetime.timedelta(hours = deltaHours, minutes = deltaMinutes)
         c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHour)))
+        (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHours)))
         get_db().commit()
         mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买1个邀请，0个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
     else:
@@ -380,43 +381,97 @@ def extendvip(user_id, extend_month, fee, log):
     user_level = inviter_row[0][2]
     if user_level == 'user':
         return jsonify({'status': 'failed', 'message': '请先升级为VIP'})
-    if int(user_balance) < int(fee):
-        return jsonify({'status': 'failed', 'message': '帐户余额不足，请点击头像进入财富中心充值'})
-    c.execute("SELECT extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
-    inviter_row = c.fetchall()
-    extend_remain = inviter_row[0][0]
-    inviter_balance = inviter_row[0][1]
-    if int(extend_remain) < int(extend_month):
+    if user_level == 'vip':
+        if int(user_balance) < int(fee):
+            return jsonify({'status': 'failed', 'message': '帐户余额不足，请点击头像进入财富中心充值'})
+        c.execute("SELECT extend_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
+        inviter_row = c.fetchall()
+        extend_remain = inviter_row[0][0]
+        inviter_balance = inviter_row[0][1]
+        if int(extend_remain) < int(extend_month):
+            now = datetime.datetime.now()
+            des_time = now + datetime.timedelta(hours = deltaHours, minutes = deltaMinutes)
+            c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (user_id, inviter, 'extendvip', str(0), extend_month, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHours)))
+            get_db().commit()
+            mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买0个邀请，'+extend_month+'个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
+        else:
+            inviter_balance = str(int(inviter_balance)+int(fee))
+            extend_remain = str(int(extend_remain)-int(extend_month))
+            mes2bil(inviter, '售出VIP延长'+extend_month+'个月', '+'+fee)
+
+        user_balance = str(int(user_balance)-int(fee))
+
+        # update user's infomation
+        c.execute("SELECT expire_year, expire_month, expire_day FROM user_info WHERE user_id= ?", (user_id,))
+        ret = c.fetchall()
         now = datetime.datetime.now()
-        des_time = now + datetime.timedelta(hours=deltaHour)
-        c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, inviter, 'extendvip', str(0), extend_month, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHour)))
+        isExpired = False
+        if int(ret[0][0]) < now.year:
+            isExpired = True
+        elif int(ret[0][0]) == now.year:
+            if int(ret[0][1]) < now.month:
+                isExpired = True
+            elif int(ret[0][1]) == now.month:
+                if int(ret[0][2]) < now.day:
+                    isExpired = True
+        expire_year = ret[0][0]
+        expire_month = ret[0][1]
+        expire_day = ret[0][2]
+        if isExpired == False:
+            expire_year = str(int(int(ret[0][0])+(int(ret[0][1])-1+int(extend_month))/12))
+            expire_month = str((int(ret[0][1])-1+int(extend_month))%12+1)
+        else:
+            expire_year = str(int(now.year+(now.month-1+int(extend_month))/12))
+            expire_month = str((now.month-1+int(extend_month))%12+1)
+            expire_day = now.day;
+        c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ?, expire_day = ?, WHERE user_id = ?",
+                                      (user_balance, expire_year, expire_month, expire_day, user_id,))
+
+        # update inviter's information
+        c.execute("UPDATE user_info SET balance = ?, extend_remain = ? WHERE user_id = ?",
+                  (inviter_balance, extend_remain, inviter,))
+
         get_db().commit()
-        mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买0个邀请，'+extend_month+'个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
+
+        mes2user(user_id, '成功延长VIP', '您的VIP延长了'+extend_month+'个月')
+        mes2user(inviter, '售出延长VIP', '您的下级VIP延长'+extend_month+'个月')
+        mes2bil(user_id, 'VIP延长'+extend_month+'个月', '-'+fee)
     else:
-        inviter_balance = str(int(inviter_balance)+int(fee))
-        extend_remain = str(int(extend_remain)-int(extend_month))
-        mes2bil(inviter, '售出VIP延长'+extend_month+'个月', '+'+fee)
-
-    user_balance = str(int(user_balance)-int(fee))
-
-    # update user's infomation
-    c.execute("SELECT expire_year, expire_month FROM user_info WHERE user_id= ?", (user_id,))
-    ret = c.fetchall()
-    expire_year = str(int(int(ret[0][0])+(int(ret[0][1])-1+int(extend_month))/12))
-    expire_month = str((int(ret[0][1])-1+int(extend_month))%12+1)
-    c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ? WHERE user_id = ?",
-                                  (user_balance, expire_year, expire_month, user_id,))
-
-    # update inviter's information
-    c.execute("UPDATE user_info SET balance = ?, extend_remain = ? WHERE user_id = ?",
-              (inviter_balance, extend_remain, inviter,))
-
-    get_db().commit()
-
-    mes2user(user_id, '成功延长VIP', '您的VIP延长了'+extend_month+'个月')
-    mes2user(inviter, '售出延长VIP', '您的下级VIP延长'+extend_month+'个月')
-    mes2bil(user_id, 'VIP延长'+extend_month+'个月', '-'+fee)
+        c.execute("SELECT extend_remain FROM user_info WHERE user_id = ?",(user_id,))
+        inviter_row = c.fetchall()
+        extend_remain = inviter_row[0][0]
+        if int(extend_remain) < int(extend_month):
+            return jsonify({'status': 'failed', 'message': '您的付费次数已不足，请购买续费套餐'})
+        else:
+            extend_remain = str(int(extend_remain)-int(extend_month))
+        # update user's infomation
+        c.execute("SELECT expire_year, expire_month, expire_day FROM user_info WHERE user_id= ?", (user_id,))
+        ret = c.fetchall()
+        now = datetime.datetime.now()
+        isExpired = False
+        if int(ret[0][0]) < now.year:
+            isExpired = True
+        elif int(ret[0][0]) == now.year:
+            if int(ret[0][1]) < now.month:
+                isExpired = True
+            elif int(ret[0][1]) == now.month:
+                if int(ret[0][2]) < now.day:
+                    isExpired = True
+        expire_year = ret[0][0]
+        expire_month = ret[0][1]
+        expire_day = ret[0][2]
+        if isExpired == False:
+            expire_year = str(int(int(ret[0][0])+(int(ret[0][1])-1+int(extend_month))/12))
+            expire_month = str((int(ret[0][1])-1+int(extend_month))%12+1)
+        else:
+            expire_year = str(int(now.year+(now.month-1+int(extend_month))/12))
+            expire_month = str((now.month-1+int(extend_month))%12+1)
+            expire_day = now.day;
+        c.execute("UPDATE user_info SET extend_remain = ?, expire_year = ?, expire_month = ? , expire_day = ? WHERE user_id = ?",
+                                      (extend_remain, expire_year, expire_month, expire_day, user_id,))
+        get_db().commit()
+        mes2user(user_id, '成功延长VIP', '您使用自己的套餐延长VIP'+extend_month+'个月')
     return jsonify({'status': 'ok', 'message': '续费成功'})
 
 
@@ -453,9 +508,9 @@ def extendagent(user_id, level, invitation, extend, fee, log):
     inviter_balance = inviter_row[0][3]
     if int(invitation_remain) < int(invitation) or int(extend_remain) < int(extend):
         now = datetime.datetime.now()
-        des_time = now + datetime.timedelta(hours=deltaHour)
+        des_time = now + datetime.timedelta(hours = deltaHours, minutes = deltaMinutes)
         c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, inviter, level, invitation, extend, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHour)))
+            (user_id, inviter, level, invitation, extend, fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHours)))
         get_db().commit()
         mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买'+invitation+'个邀请，'+extend+'个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
     else:
@@ -594,15 +649,18 @@ def hourlycheck():
                     if int(row[9]) < now.day:
                         should_upleve = True
                     elif int(row[9]) == now.day:
-                        if int(row[10]) <= now.hour:
+                        if int(row[10]) < now.hour:
                             should_upleve = True
+                        elif int(row[10]) == now.hour:
+                            if int(row[11]) <= now.minute:
+                                should_upleve = True
 
             if should_upleve == True:
                 api_uplevel(user_id, invitation, extend)
                 now = datetime.datetime.now()
-                des_time = now + datetime.timedelta(hours=deltaHour)
-                c.execute("UPDATE deal_info SET end_year = ?, end_month = ?, end_day = ? WHERE deal_id = ?",
-                    (str(des_time.year), str(des_time.month), str(des_time.day), deal_id,))
+                des_time = now + datetime.timedelta(hours = deltaHours, minutes = deltaMinutes)
+                c.execute("UPDATE deal_info SET end_year = ?, end_month = ?, end_day = ?, end_hour = ?, end_minute = ? WHERE deal_id = ?",
+                    (str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), deal_id,))
 
         get_db().commit()
     return jsonify({'status': 'Hourly Checked'})

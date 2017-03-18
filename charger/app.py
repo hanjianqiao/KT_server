@@ -15,6 +15,8 @@ import http.client
 import json
 import datetime
 
+import hashlib
+
 
 
 # Create Flask application
@@ -106,6 +108,26 @@ def home(message='kidding'):
     else:
         return render_template('charge.html', data = message)
  
+
+ # somewhere to login
+@app.route("/md5", methods=["GET", "POST"])
+def md5():
+    if request.method == 'POST':
+        username = request.form['origintext']      
+        return Response('''
+        <form action="" method="post">
+            <p><input type=text name=origintext>
+            <p><input type=submit value=生成>
+        </form>
+        ''' + hashlib.md5(username.encode('utf-8')).hexdigest())
+    else:
+        return Response('''
+        <form action="" method="post">
+            <p><input type=text name=origintext>
+            <p><input type=submit value=生成>
+        </form>
+        ''')
+
 
 @app.route('/add', methods=['POST'])
 def do_charge():

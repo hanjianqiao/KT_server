@@ -161,6 +161,7 @@ http://127.0.0.1:5000/login
 sudo apt-get install apache2
 sudo apt-get install libapache2-mod-wsgi-py3
 sudo a2enmod ssl
+sudo a2enmod wsgi
 ```
 
 2. `modify Apache config file`

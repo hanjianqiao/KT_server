@@ -25,7 +25,7 @@ class myThread (threading.Thread):
             connection.request('POST', '/hourlycheck', json_foo, headers)
             response = connection.getresponse()
             print(response.read().decode())
-            time.sleep(1800+int(random.random()*1000))
+            time.sleep(120)
 
 
 # Create new threads

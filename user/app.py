@@ -144,7 +144,7 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['user_id', 'inviter', 'code', 'email', 'qq', 'wechat', 'taobao', 'type', 'level', 'expire_year', 'expire_month', 'expire_day', 'balance', 'invitation_remain', 'extend_remain', 'invitee_total', 'invitee_vip', 'invitee_agent']
+    list_columns = ['user_id', 'password', 'inviter', 'code', 'email', 'qq', 'wechat', 'taobao', 'type', 'level', 'expire_year', 'expire_month', 'expire_day', 'balance', 'invitation_remain', 'extend_remain', 'invitee_total', 'invitee_vip', 'invitee_agent']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     column_sortable_list = ()
