@@ -275,19 +275,6 @@ def api_up2vip():
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 
-extendvipinfo = {
-    '1':{'month':'1', 'price':'198'},
-    '2':{'month':'2', 'price':'300'},
-    '3':{'month':'3', 'price':'400'},
-    '4':{'month':'10', 'price':'1000'},
-}
-
-
-@app.route('/extendvipinfo', methods=['POST'])
-def api_extendvipinfo():
-    return jsonify(extendvipinfo)
-
-
 @app.route('/extendvip', methods=['POST'])
 def api_extendvip():
     if request.headers['Content-Type'] == 'application/json':

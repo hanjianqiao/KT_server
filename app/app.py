@@ -63,6 +63,18 @@ class AppStatus(db.Model):
     version = db.Column(db.Text)
 
 
+class iOSStatus(db.Model):
+    __tablename__ = 'ios'
+    log_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    version = db.Column(db.Text)
+
+
+class AndroidStatus(db.Model):
+    __tablename__ = 'android'
+    log_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    version = db.Column(db.Text)
+
+
 # Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
@@ -136,8 +148,26 @@ def index():
 
 
 @app.route('/check', methods=['GET'])
-def api_list():
+def api_check():
     row = db.session.query(AppStatus).first()
+    ret = row.version
+    db.session.commit()
+    return jsonify({'status': 'ok',
+                    'message': ret
+                })
+
+@app.route('/ios', methods=['GET'])
+def api_ios():
+    row = db.session.query(iOSStatus).first()
+    ret = row.version
+    db.session.commit()
+    return jsonify({'status': 'ok',
+                    'message': ret
+                })
+
+@app.route('/android', methods=['GET'])
+def api_android():
+    row = db.session.query(AndroidStatus).first()
     ret = row.version
     db.session.commit()
     return jsonify({'status': 'ok',
@@ -158,6 +188,8 @@ admin = flask_admin.Admin(
 #admin.add_view(MyModelView(Role, db.session))
 #admin.add_view(MyModelView(User, db.session))
 admin.add_view(MyModelView2(AppStatus, db.session))
+admin.add_view(MyModelView2(iOSStatus, db.session))
+admin.add_view(MyModelView2(AndroidStatus, db.session))
 
 
 # define a context processor for merging flask-admin's template context into the

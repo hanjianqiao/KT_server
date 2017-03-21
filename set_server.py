@@ -324,7 +324,7 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
         now = datetime.datetime.now()
         des_time = now + datetime.timedelta(hours = deltaHours, minutes = deltaMinutes)
         c.execute("INSERT INTO deal_info (user_id, inviter_id, type, need_invite, need_extend, fee, end_year, end_month, end_day, end_hour, end_minute, interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (user_id, inviter, 'up2vip', str(1), str(0), str(198), str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHours)))
+        (user_id, inviter, 'up2vip', str(1), str(0), fee, str(des_time.year), str(des_time.month), str(des_time.day), str(des_time.hour), str(des_time.minute), str(deltaHours)))
         get_db().commit()
         mes2user(inviter, '关于剩余次数不足的通知！', '您邀请的'+user_id+'用户当前购买1个邀请，0个续费，由于您剩余次数不足，暂由系统提供并收款，请于20小时内完成补充，补充后1个小时内系统会与您完成对接（扣除次数+转账给您），否则，将上移至您的上级代理（上级次数不足时继续上移）。')
     else:

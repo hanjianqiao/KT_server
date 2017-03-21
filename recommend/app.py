@@ -15,7 +15,10 @@ import ssl
 from flask_babelex import Babel
 import urllib
 from xlrd import open_workbook
+import xlrd
 from decimal import Decimal
+import datetime
+import flask_excel as excel
 
 
 
@@ -71,6 +74,22 @@ class GoodInfo(db.Model):
     price = db.Column(db.Text)
     sell = db.Column(db.Text)
     url = db.Column(db.Text)
+    expire = db.Column(db.Text)
+
+
+class OffGoodInfo(db.Model):
+    __tablename__ = 'off_good_info'
+    good_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.Text)
+    catalog = db.Column(db.Text)
+    activity = db.Column(db.Text)
+    off = db.Column(db.Text)
+    rate = db.Column(db.Text)
+    image = db.Column(db.Text)
+    price = db.Column(db.Text)
+    sell = db.Column(db.Text)
+    url = db.Column(db.Text)
+    expire = db.Column(db.Text)
 
 
 # Setup Flask-Security
@@ -106,17 +125,17 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['good_id', 'catalog', 'activity', 'off', 'rate', 'title', 'image', 'price', 'orprice', 'url']
+    list_columns = ['good_id', 'catalog', 'activity', 'off', 'rate', 'title', 'price', 'url', 'expire']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
-    column_sortable_list = ()
+    column_sortable_list = ('title', 'url', 'price', 'expire')
 
     # Rename 'title' columns to 'Post Title' in list view
-    column_labels = dict(good_id=u'商品编号', catalog=u'分类', activity=u'活动', off=u'优惠券减免', rate=u'佣金比例', title=u'标题', image=u'图片', price=u'价格', sell=u'销量', url=u'淘宝链接')
-    column_searchable_list = ('good_id',)
+    column_labels = dict(good_id=u'商品编号', catalog=u'分类', activity=u'活动', off=u'优惠券', rate=u'佣金比例', title=u'标题', image=u'图片', price=u'价格', sell=u'销量', url=u'淘宝链接', expire=u'下架时间')
+    
+    column_searchable_list = ('url',)
 
-    column_filters = ('title',
-                      filters.FilterLike(GoodInfo.title, u'标题', options=(('cloth', u'衣服'), ('pant', u'裤子'))))
+    column_filters = ('title', 'url', 'catalog', 'good_id')
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:
@@ -189,10 +208,26 @@ def upload_file():
                             activity = int(0)
                         else:
                             activity = int(activity)
-                        item = GoodInfo(title=sheet.cell(row,0).value, catalog=catalog, activity=activity,
-                            off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
-                            url=sheet.cell(row,6).value, price=sheet.cell(row,7).value, sell=sheet.cell(row,8).value)
-                        db.session.add(item)
+                        originItem = GoodInfo.query.filter_by(url=sheet.cell(row,6).value).first()
+                        excel_date = xlrd.xldate_as_tuple(sheet.cell(row,9).value, 0)
+                        expire_str = ''+str(excel_date[0])+'/'+str(excel_date[1])+'/'+str(excel_date[2])
+                        if originItem == None:
+                            item = GoodInfo(title=sheet.cell(row,0).value, catalog=catalog, activity=activity,
+                                off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
+                                url=sheet.cell(row,6).value, price=sheet.cell(row,7).value, sell=sheet.cell(row,8).value,
+                                expire=expire_str)
+                            db.session.add(item)
+                        else:
+                            originItem.title=sheet.cell(row,0).value
+                            originItem.catalog=catalog
+                            originItem.activity=activity
+                            originItem.off=sheet.cell(row,3).value
+                            originItem.rate=sheet.cell(row,4).value
+                            originItem.image=sheet.cell(row,5).value
+                            originItem.url=sheet.cell(row,6).value
+                            originItem.price=sheet.cell(row,7).value
+                            originItem.sell=sheet.cell(row,8).value
+                            originItem.expire=expire_str
                     db.session.commit()
                     os.remove('tmp9s0d9.xls')
                 return u'上传成功'
@@ -239,6 +274,35 @@ def api_query():
                 })
 
 
+@app.route('/check', methods=['GET'])
+def api_check():
+    rows = db.session.query(GoodInfo).all()
+    today = datetime.datetime.now().date()
+    for row in rows:
+        expire = datetime.datetime.strptime(row.expire, "%Y/%m/%d").date()
+        if today > expire:
+            item = OffGoodInfo(title=row.title, catalog=row.catalog, activity = row.activity,
+                                off=row.off, rate=row.rate, image=row.image,
+                                url=row.url, price=row.price, sell=row.sell,
+                                expire=row.expire)
+            db.session.add(item)
+            db.session.delete(row)
+        db.session.commit();
+
+    return jsonify({'status': 'ok',
+                    'message': "OK"
+                })
+
+
+@app.route("/download", methods=['GET'])
+def download_file():
+    query_sets = OffGoodInfo.query.all()
+    column_names = ['good_id', 'catalog', 'activity', 'off', 'rate', 'title', 'price', 'url', 'expire']
+    response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
+    cd = 'attachment; filename=expiredGood.xls'
+    response.headers['Content-Disposition'] = cd
+    return response
+
 # Create admin
 admin = flask_admin.Admin(
     app,
@@ -252,6 +316,7 @@ admin = flask_admin.Admin(
 #admin.add_view(MyModelView(Role, db.session))
 #admin.add_view(MyModelView(User, db.session))
 admin.add_view(MyModelView2(GoodInfo, db.session))
+admin.add_view(MyModelView2(OffGoodInfo, db.session))
 
 
 # define a context processor for merging flask-admin's template context into the

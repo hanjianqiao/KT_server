@@ -2,7 +2,7 @@
 SECRET_KEY = 'lanchourboowewfd98347'
 
 # Create in-memory database
-DATABASE_FILE = 'bill.db'
+DATABASE_FILE = 'appStatus.db'
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
 SQLALCHEMY_ECHO = True
 
