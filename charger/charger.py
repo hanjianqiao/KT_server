@@ -210,7 +210,7 @@ def api_query():
 # Create admin
 admin = flask_admin.Admin(
     app,
-    u'小牛快淘自选商品后台管理',
+    u'小牛快淘充值提现管理',
     base_template='my_master.html',
     template_mode='bootstrap3',
 )
@@ -266,6 +266,7 @@ if __name__ == '__main__':
         build_sample_db()
     #add_admin_user()
     # Start app
-    context = ('/home/lct/user.server/sslcrts/2_user.hanjianqiao.cn.crt', '/home/lct/user.server/sslcrts/3_user.hanjianqiao.cn.key')
+    context = ('/home/lct/user.server/sslcrts/user.vsusvip.com/user.vsusvip.com.pem',
+        '/home/lct/user.server/sslcrts/user.vsusvip.com/user.vsusvip.com.key')
     app.run(host='0.0.0.0', port=2100, ssl_context=context, debug=True)
     #app.run(host='0.0.0.0', port=2100, debug=True)

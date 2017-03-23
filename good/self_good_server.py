@@ -15,6 +15,10 @@ import ssl
 from flask_babelex import Babel
 import urllib
 from xlrd import open_workbook
+import xlrd
+from decimal import Decimal
+import datetime
+import flask_excel as excel
 
 
 
@@ -66,6 +70,18 @@ class GoodInfo(db.Model):
     price = db.Column(db.Text)
     sell = db.Column(db.Text)
     url = db.Column(db.Text)
+    expire = db.Column(db.Text)
+
+
+class OffGoodInfo(db.Model):
+    __tablename__ = 'off_good_info'
+    good_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.Text)
+    image = db.Column(db.Text)
+    price = db.Column(db.Text)
+    sell = db.Column(db.Text)
+    url = db.Column(db.Text)
+    expire = db.Column(db.Text)
 
 
 # Setup Flask-Security
@@ -101,17 +117,16 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['good_id', 'title', 'image', 'price', 'sell', 'url']
+    list_columns = ['good_id', 'title', 'price', 'sell', 'url', 'expire']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
-    column_sortable_list = ()
+    column_sortable_list = ('title', 'url', 'price', 'expire')
 
     # Rename 'title' columns to 'Post Title' in list view
-    column_labels = dict(good_id=u'商品编号', title=u'标题', image=u'图片', price=u'现价', sell=u'销量', url=u'淘宝链接')
+    column_labels = dict(good_id=u'商品编号', title=u'标题', image=u'图片', price=u'现价', sell=u'销量', url=u'淘宝链接', expire=u'下架时间')
     column_searchable_list = ('good_id',)
 
-    column_filters = ('title',
-                      filters.FilterLike(GoodInfo.title, u'标题', options=(('cloth', u'衣服'), ('pant', u'裤子'))))
+    column_filters = ('title', 'url', 'good_id', 'expire')
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:
@@ -162,8 +177,8 @@ def upload_file():
             if file.filename == '':
                 return u'未选择文件'
             else:
-                file.save('tmp9s0d9.xls')
-                wb = open_workbook('tmp9s0d9.xls')
+                file.save('/home/lct/logs/tmp9s0d9.xls')
+                wb = open_workbook('/home/lct/logs/tmp9s0d9.xls')
                 for sheet in wb.sheets():
                     number_of_rows = sheet.nrows
                     number_of_columns = sheet.ncols
@@ -172,16 +187,75 @@ def upload_file():
 
                     rows = []
                     for row in range(1, number_of_rows):
-                        values = []
-                        item = GoodInfo(title=sheet.cell(row,0).value, image=sheet.cell(row,1).value, url=sheet.cell(row,2).value,
-                            price=sheet.cell(row,3).value, sell=sheet.cell(row,4).value)
-                        db.session.add(item)
-                    db.session.commit()
-                    os.remove('tmp9s0d9.xls')
+                        originItem = GoodInfo.query.filter_by(url=sheet.cell(row,2).value).first()
+                        expire_str = ''
+                        print("####row is %s" % sheet.cell(row,5).value)
+                        if type(sheet.cell(row,5).value) is str:
+                            excel_date = datetime.datetime.strptime(sheet.cell(row,5).value, '%Y-%m-%d %H:%M:%S')
+                            expire_str = ''+str(excel_date.year)+'/'+str(excel_date.month)+'/'+str(excel_date.day)
+                        else:
+                            excel_date = xlrd.xldate_as_tuple(sheet.cell(row,5).value, 0)
+                            expire_str = ''+str(excel_date[0])+'/'+str(excel_date[1])+'/'+str(excel_date[2])
+                        if originItem == None:
+                            item = GoodInfo(title=sheet.cell(row,0).value, image=sheet.cell(row,1).value,
+                                url=sheet.cell(row,2).value, price=sheet.cell(row,3).value, sell=sheet.cell(row,4).value,
+                                expire=expire_str)
+                            db.session.add(item)
+                        else:
+                            originItem.title=sheet.cell(row,0).value
+                            originItem.image=sheet.cell(row,1).value
+                            originItem.url=sheet.cell(row,2).value
+                            originItem.price=sheet.cell(row,3).value
+                            originItem.sell=sheet.cell(row,4).value
+                            originItem.expire=expire_str
+                db.session.commit()
+                os.remove('/home/lct/logs/tmp9s0d9.xls')
                 return u'上传成功'
         return u'Hello'
     return redirect(url_for('security.login', next='/'))
 
+
+@app.route('/check', methods=['GET'])
+def api_check():
+    limit = 100
+    offset = 0
+    today = datetime.datetime.now().date()
+    while True:
+        rows = db.session.query(GoodInfo).offset(offset).limit(limit).all()
+        offset = offset + limit
+        if len(rows) == 0:
+            break
+        for row in rows:
+            expire = datetime.datetime.strptime(row.expire, "%Y/%m/%d").date()
+            if today > expire:
+                item = OffGoodInfo(title=row.title, image=row.image,
+                                    url=row.url, price=row.price, sell=row.sell,
+                                    expire=row.expire)
+                db.session.add(item)
+                db.session.delete(row)
+    db.session.commit();
+
+    return jsonify({'status': 'ok',
+                    'message': "OK"
+                })
+
+
+@app.route("/download", methods=['GET'])
+def download_file():
+    if not current_user.is_active or not current_user.is_authenticated:
+        return redirect(url_for('security.login', next='/'))
+    query_sets = OffGoodInfo.query.all()
+    if query_sets == None:
+        jsonify({'status': 'ok',
+                    'message': "没有数据"
+                })
+    column_names = ['title', 'image', 'url', 'price', 'sell', 'expire']
+    response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
+    cd = 'attachment; filename=expiredSelfGood.xls'
+    response.headers['Content-Disposition'] = cd
+    #db.session.query(OffGoodInfo).delete()
+    #db.session.commit()
+    return response
 
 
 @app.route('/search', methods=['GET'])
@@ -262,6 +336,7 @@ admin = flask_admin.Admin(
 #admin.add_view(MyModelView(Role, db.session))
 #admin.add_view(MyModelView(User, db.session))
 admin.add_view(MyModelView2(GoodInfo, db.session))
+admin.add_view(MyModelView2(OffGoodInfo, db.session))
 
 
 # define a context processor for merging flask-admin's template context into the

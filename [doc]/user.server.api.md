@@ -185,10 +185,10 @@ sudo vim /etc/apache2/apache2.conf
 
 ```sh
 sudo groupadd varwwwusers
-sudo chgrp -R varwwwusers /home/ubuntu/user.server
+sudo chgrp -R varwwwusers /home/lct/user.server/good
 sudo adduser www-data varwwwusers
-sudo chmod -R 770 /home/ubuntu/user.server
-usermod -a -G varwwwusers ubuntu
+sudo chmod -R 770 /home/lct/user.server/good/
+sudo usermod -a -G varwwwusers lct
 git config core.filemode false
 ```
 

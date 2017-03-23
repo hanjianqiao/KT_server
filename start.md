@@ -12,10 +12,6 @@ nohup python3 bill/app.py 1>bil.out.log 2>bil.err.log &
 
 nohup python3 message/app.py 1>mes.out.log 2>mes.err.log &
 
-nohup python3 good/app.py 1>goo.out.log 2>goo.err.log &
-
-nohup python3 recommend/app.py 1>rec.out.log 2>rec.err.log &
-
 nohup python3 charger/app.py 1>cha.out.log 2>cha.err.log &
 
 nohup python3 app/app.py 1>app.out.log 2>app.err.log &

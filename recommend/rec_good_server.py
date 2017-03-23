@@ -125,7 +125,7 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['good_id', 'catalog', 'activity', 'off', 'rate', 'title', 'price', 'url', 'expire']
+    list_columns = ['good_id', 'title', 'catalog', 'activity', 'off', 'rate', 'url', 'price', 'sell', 'expire']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     column_sortable_list = ('title', 'url', 'price', 'expire')
@@ -187,8 +187,8 @@ def upload_file():
             if file.filename == '':
                 return u'未选择文件'
             else:
-                file.save('tmp9s0d9.xls')
-                wb = open_workbook('tmp9s0d9.xls')
+                file.save('/home/lct/logs/tmp9s0d9.xls')
+                wb = open_workbook('/home/lct/logs/tmp9s0d9.xls')
                 for sheet in wb.sheets():
                     number_of_rows = sheet.nrows
                     number_of_columns = sheet.ncols
@@ -197,7 +197,6 @@ def upload_file():
 
                     rows = []
                     for row in range(1, number_of_rows):
-                        values = []
                         catalog = sheet.cell(row,1).value
                         if(catalog==''):
                             catalog = int(0)
@@ -209,8 +208,14 @@ def upload_file():
                         else:
                             activity = int(activity)
                         originItem = GoodInfo.query.filter_by(url=sheet.cell(row,6).value).first()
-                        excel_date = xlrd.xldate_as_tuple(sheet.cell(row,9).value, 0)
-                        expire_str = ''+str(excel_date[0])+'/'+str(excel_date[1])+'/'+str(excel_date[2])
+                        expire_str = ''
+                        print("####row is %s" % sheet.cell(row,9).value)
+                        if type(sheet.cell(row,9).value) is str:
+                            excel_date = datetime.datetime.strptime(sheet.cell(row,9).value, '%Y-%m-%d %H:%M:%S')
+                            expire_str = ''+str(excel_date.year)+'/'+str(excel_date.month)+'/'+str(excel_date.day)
+                        else:
+                            excel_date = xlrd.xldate_as_tuple(sheet.cell(row,9).value, 0)
+                            expire_str = ''+str(excel_date[0])+'/'+str(excel_date[1])+'/'+str(excel_date[2])
                         if originItem == None:
                             item = GoodInfo(title=sheet.cell(row,0).value, catalog=catalog, activity=activity,
                                 off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
@@ -228,8 +233,8 @@ def upload_file():
                             originItem.price=sheet.cell(row,7).value
                             originItem.sell=sheet.cell(row,8).value
                             originItem.expire=expire_str
-                    db.session.commit()
-                    os.remove('tmp9s0d9.xls')
+                db.session.commit()
+                os.remove('/home/lct/logs/tmp9s0d9.xls')
                 return u'上传成功'
         return u'Hello'
     return redirect(url_for('security.login', next='/'))
@@ -276,18 +281,24 @@ def api_query():
 
 @app.route('/check', methods=['GET'])
 def api_check():
-    rows = db.session.query(GoodInfo).all()
+    limit = 100
+    offset = 0
     today = datetime.datetime.now().date()
-    for row in rows:
-        expire = datetime.datetime.strptime(row.expire, "%Y/%m/%d").date()
-        if today > expire:
-            item = OffGoodInfo(title=row.title, catalog=row.catalog, activity = row.activity,
-                                off=row.off, rate=row.rate, image=row.image,
-                                url=row.url, price=row.price, sell=row.sell,
-                                expire=row.expire)
-            db.session.add(item)
-            db.session.delete(row)
-        db.session.commit();
+    while True:
+        rows = db.session.query(GoodInfo).offset(offset).limit(limit).all()
+        offset = offset + limit
+        if len(rows) == 0:
+            break
+        for row in rows:
+            expire = datetime.datetime.strptime(row.expire, "%Y/%m/%d").date()
+            if today > expire:
+                item = OffGoodInfo(title=row.title, catalog=row.catalog, activity = row.activity,
+                                    off=row.off, rate=row.rate, image=row.image,
+                                    url=row.url, price=row.price, sell=row.sell,
+                                    expire=row.expire)
+                db.session.add(item)
+                db.session.delete(row)
+    db.session.commit();
 
     return jsonify({'status': 'ok',
                     'message': "OK"
@@ -296,11 +307,19 @@ def api_check():
 
 @app.route("/download", methods=['GET'])
 def download_file():
+    if not current_user.is_active or not current_user.is_authenticated:
+        return redirect(url_for('security.login', next='/'))
     query_sets = OffGoodInfo.query.all()
-    column_names = ['good_id', 'catalog', 'activity', 'off', 'rate', 'title', 'price', 'url', 'expire']
+    if query_sets == None:
+        jsonify({'status': 'ok',
+                    'message': "没有数据"
+                })
+    column_names = ['title', 'catalog', 'activity', 'off', 'rate', 'image', 'url', 'price', 'sell', 'expire']
     response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
     cd = 'attachment; filename=expiredGood.xls'
     response.headers['Content-Disposition'] = cd
+    #db.session.query(OffGoodInfo).delete()
+    #db.session.commit()
     return response
 
 # Create admin
