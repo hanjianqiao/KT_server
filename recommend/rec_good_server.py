@@ -135,7 +135,7 @@ class MyModelView2(sqla.ModelView):
     
     column_searchable_list = ('url',)
 
-    column_filters = ('title', 'url', 'catalog', 'good_id')
+    column_filters = ('title', 'url', 'catalog', 'good_id', 'activity')
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:
@@ -254,9 +254,9 @@ def api_search():
     limit = int(limit)
     rows = []
     if(activity == '0'):
-        rows = GoodInfo.query.filter_by(catalog=catalog).offset(offset).limit(limit).all()
+        rows = GoodInfo.query.filter_by(catalog=catalog).order_by(GoodInfo.good_id.desc()).offset(offset).limit(limit).all()
     else:
-        rows = GoodInfo.query.filter_by(activity=activity).offset(offset).limit(limit).all()
+        rows = GoodInfo.query.filter_by(activity=activity).order_by(GoodInfo.good_id.desc()).offset(offset).limit(limit).all()
     ret = []
     for row in rows:
         ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
@@ -318,8 +318,8 @@ def download_file():
     response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
     cd = 'attachment; filename=expiredGood.xls'
     response.headers['Content-Disposition'] = cd
-    #db.session.query(OffGoodInfo).delete()
-    #db.session.commit()
+    db.session.query(OffGoodInfo).delete()
+    db.session.commit()
     return response
 
 # Create admin

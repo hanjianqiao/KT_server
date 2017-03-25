@@ -4,6 +4,7 @@ import os
 #from flask import Flask, url_for, redirect, render_template, request, abort
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_, or_, not_
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required, current_user
 from flask_security.utils import encrypt_password
@@ -67,8 +68,8 @@ class GoodInfo(db.Model):
     good_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title = db.Column(db.Text)
     image = db.Column(db.Text)
-    price = db.Column(db.Text)
-    sell = db.Column(db.Text)
+    price = db.Column(db.DECIMAL(8,2))
+    sell = db.Column(db.Integer)
     url = db.Column(db.Text)
     expire = db.Column(db.Text)
 
@@ -78,8 +79,8 @@ class OffGoodInfo(db.Model):
     good_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title = db.Column(db.Text)
     image = db.Column(db.Text)
-    price = db.Column(db.Text)
-    sell = db.Column(db.Text)
+    price = db.Column(db.DECIMAL(8,2))
+    sell = db.Column(db.Integer)
     url = db.Column(db.Text)
     expire = db.Column(db.Text)
 
@@ -120,7 +121,7 @@ class MyModelView2(sqla.ModelView):
     list_columns = ['good_id', 'title', 'price', 'sell', 'url', 'expire']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
-    column_sortable_list = ('title', 'url', 'price', 'expire')
+    column_sortable_list = ('good_id', 'title', 'price', 'sell', 'url', 'expire')
 
     # Rename 'title' columns to 'Post Title' in list view
     column_labels = dict(good_id=u'商品编号', title=u'标题', image=u'图片', price=u'现价', sell=u'销量', url=u'淘宝链接', expire=u'下架时间')
@@ -177,8 +178,12 @@ def upload_file():
             if file.filename == '':
                 return u'未选择文件'
             else:
+                ## for deploy
                 file.save('/home/lct/logs/tmp9s0d9.xls')
                 wb = open_workbook('/home/lct/logs/tmp9s0d9.xls')
+                # for test
+                #file.save('tmp9s0d9.xls')
+                #wb = open_workbook('tmp9s0d9.xls')
                 for sheet in wb.sheets():
                     number_of_rows = sheet.nrows
                     number_of_columns = sheet.ncols
@@ -209,7 +214,10 @@ def upload_file():
                             originItem.sell=sheet.cell(row,4).value
                             originItem.expire=expire_str
                 db.session.commit()
+                ## for deploy
                 os.remove('/home/lct/logs/tmp9s0d9.xls')
+                ## for test
+                #os.remove('tmp9s0d9.xls')
                 return u'上传成功'
         return u'Hello'
     return redirect(url_for('security.login', next='/'))
@@ -253,14 +261,16 @@ def download_file():
     response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
     cd = 'attachment; filename=expiredSelfGood.xls'
     response.headers['Content-Disposition'] = cd
-    #db.session.query(OffGoodInfo).delete()
-    #db.session.commit()
+    db.session.query(OffGoodInfo).delete()
+    db.session.commit()
     return response
 
+searchExcept = ['童', '婴', '中年', '老年']
 
 @app.route('/search', methods=['GET'])
 def api_search():
     key = request.args.get('key')
+    query_type = request.args.get('query_type', '0')
     offset = request.args.get('offset')
     if offset == None:
         offset = '0'
@@ -270,6 +280,18 @@ def api_search():
         limit = '20'
     limit = int(limit)
     originStr = urllib.parse.unquote(key)
+
+    exceptIndex = -1
+    # deal explicit filter
+    for word in searchExcept:
+        if word in originStr:
+            exceptIndex = searchExcept.index(word)
+            break
+    for word in searchExcept:
+        if exceptIndex != -1 and word == searchExcept[exceptIndex]:
+            continue
+        originStr.replace(word, "")
+
     targetStr = []
     for s in originStr:
         if s != ' ':
@@ -277,34 +299,81 @@ def api_search():
             if len(targetStr) >=10:
                 break
     rows = []
-    if len(targetStr) == 0:
-        rows = []
-    elif len(targetStr) == 1:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 2:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 3:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 4:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 5:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 6:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 7:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 8:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 9:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%')).offset(offset).limit(limit).all()
-    elif len(targetStr) == 10:
-        rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%'),GoodInfo.title.like('%'+targetStr[9]+'%')).offset(offset).limit(limit).all()
-    else:
-        ret = []
     ret = []
+    if exceptIndex == -1:
+        if query_type == '0':
+            if len(targetStr) == 0:
+                rows = []
+            elif len(targetStr) == 1:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 2:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 3:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 4:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 5:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 6:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 7:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 8:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 9:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 10:
+                rows = GoodInfo.query.filter(~GoodInfo.title.like('%童%'), ~GoodInfo.title.like('%婴%'), ~GoodInfo.title.like('%中年%'), ~GoodInfo.title.like('%老年%'), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%'),GoodInfo.title.like('%'+targetStr[9]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        else:
+            if len(targetStr) == 0:
+                rows = []
+            elif len(targetStr) == 1:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 2:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 3:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 4:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 5:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 6:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 7:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 8:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 9:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+            elif len(targetStr) == 10:
+                rows = GoodInfo.query.filter(or_(GoodInfo.title.like('%'+searchExcept[0]+'%'), GoodInfo.title.like('%'+searchExcept[1]+'%'), GoodInfo.title.like('%'+searchExcept[2]+'%'), GoodInfo.title.like('%'+searchExcept[3]+'%')), GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%'),GoodInfo.title.like('%'+targetStr[9]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+    else:
+        if len(targetStr) == 0:
+            rows = []
+        elif len(targetStr) == 1:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 2:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 3:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 4:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 5:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 6:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 7:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 8:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 9:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+        elif len(targetStr) == 10:
+            rows = GoodInfo.query.filter(GoodInfo.title.like('%'+targetStr[0]+'%'),GoodInfo.title.like('%'+targetStr[1]+'%'),GoodInfo.title.like('%'+targetStr[2]+'%'),GoodInfo.title.like('%'+targetStr[3]+'%'),GoodInfo.title.like('%'+targetStr[4]+'%'),GoodInfo.title.like('%'+targetStr[5]+'%'),GoodInfo.title.like('%'+targetStr[6]+'%'),GoodInfo.title.like('%'+targetStr[7]+'%'),GoodInfo.title.like('%'+targetStr[8]+'%'),GoodInfo.title.like('%'+targetStr[9]+'%')).order_by(GoodInfo.sell.desc()).offset(offset).limit(limit).all()
+
     for row in rows:
-        ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
-                    'price': row.price, 'url': row.url})
+        ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': str(row.sell),
+                    'price': str(row.price), 'url': row.url})
     return jsonify({'status': 'ok',
                     'message': ret
                 })
