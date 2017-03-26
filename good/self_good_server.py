@@ -386,7 +386,7 @@ def api_query():
     ret = []
     for row in rows:
         ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
-                    'price': row.price, 'url': row.url})
+                    'price': str(row.price), 'url': row.url})
     return jsonify({'status': 'ok',
                     'message': ret
                 })
