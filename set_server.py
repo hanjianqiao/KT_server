@@ -425,7 +425,7 @@ def extendvip(user_id, extend_month, fee, log):
             expire_year = str(int(now.year+(now.month-1+int(extend_month))/12))
             expire_month = str((now.month-1+int(extend_month))%12+1)
             expire_day = now.day;
-        c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ?, expire_day = ?, WHERE user_id = ?",
+        c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ?, expire_day = ? WHERE user_id = ?",
                                       (user_balance, expire_year, expire_month, expire_day, user_id,))
 
         # update inviter's information
