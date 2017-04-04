@@ -193,6 +193,11 @@ def api_query():
 
 @app.route('/login', methods=['POST'])
 def api_login():
+    return jsonify({'status': 'failed', 'message': '此版已被无法继续使用，请尽快升级至最新版。下载地址请关注“小牛快淘”微信公众号，回复“最新版本”即可。'})
+
+
+@app.route('/login0', methods=['POST'])
+def api_login0():
     #print(request.data)
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)
@@ -215,6 +220,11 @@ def api_login():
             return jsonify({'status': 'failed', 'message': '密码错误'})
         inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month, expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip, invitee_agent, team_total = ret[0][2:]
 
+        # inviter and top inviter info
+        c.execute("SELECT expire_year, expire_month, expire_day FROM user_info WHERE user_id = ?", (inviter,))
+        inviter_row = c.fetchall()
+        uexpire_year, uexpire_month, uexpire_day = inviter_row[0][0:]
+
         c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
         ret = c.fetchall()
         wait = ''
@@ -223,10 +233,11 @@ def api_login():
         else:
             wait = 'none'
 
-        data = {'user_id': user_id, 'inviter': inviter, 'code': code,
+        data = {'parent': inviter, 'user_id': user_id, 'inviter': inviter, 'code': code,
                 'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao, 'type': type,
                 'level': level, 'expire_year': expire_year, 'expire_month': expire_month,
-                'expire_day': expire_day, 'balance': balance, 'invitation_remain': invitation_remain,
+                'expire_day': expire_day, 'uexpire_year': uexpire_year, 'uexpire_month': uexpire_month,
+                'uexpire_day': uexpire_day, 'balance': balance, 'invitation_remain': invitation_remain,
                 'extend_remain': extend_remain, 'invitee_total': invitee_total, 'invitee_vip': invitee_vip,
                 'invitee_agent': invitee_agent, 'team_total': team_total, 'wait': wait}
         return jsonify({'status': 'ok', 'message': '登陆成功', 'data': data})
