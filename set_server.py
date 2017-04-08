@@ -257,9 +257,9 @@ def api_register():
 
         # format check
         if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': '用户名格式错误'})
+            return jsonify({'status': 'failed', 'message': '用户名格式错误，请使用手机号码'})
         if not (isinstance(password, str) and len(password) >= 6):
-            return jsonify({'status': 'failed', 'message': 'password format error'})
+            return jsonify({'status': 'failed', 'message': '密码格式错误，请使用6位以上密码'})
         if not (isinstance(code, str) and len(code) == 6 and all(map(lambda d: d.isdigit(), code))):
             return jsonify({'status': 'failed', 'message': '邀请码格式错误'})
         #if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
