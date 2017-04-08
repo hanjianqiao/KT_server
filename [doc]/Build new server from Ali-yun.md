@@ -119,6 +119,17 @@ server {
 }
 ```
 
+#### Cron jobs
+
+```
+crontab  -e
+```
+
+```
+# file add line
+58 0 * * * python3 /home/lct/user.server/periodic_self.py
+```
+
 
 
 ### Recommend good server
@@ -196,6 +207,17 @@ server {
         proxy_pass http://localhost:14000;
     }
 }
+```
+
+#### Cron jobs
+
+```
+crontab  -e
+```
+
+```
+# file add line
+58 0 * * * python3 /home/lct/user.server/periodic_shop.py
 ```
 
 
@@ -414,5 +436,16 @@ server {
         proxy_pass http://localhost:15005;
     }
 }
+```
+
+#### Cron jobs
+
+```
+crontab  -e
+```
+
+```
+# file add line
+3,16,24,33,41,50 * * * * python3 /home/lct/user.server/periodic_user.py
 ```
 

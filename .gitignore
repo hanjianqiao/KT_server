@@ -96,3 +96,6 @@ cache/
 *cache/
 dist/*.exe
 database/
+
+# mac
+.DS_Store
