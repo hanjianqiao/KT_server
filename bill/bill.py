@@ -156,7 +156,16 @@ def api_add():
 @app.route('/list', methods=['GET'])
 def api_list():
     id = request.args.get('userid')
+    offset = request.args.get('offset')
+    if offset == None:
+        offset = '0'
+    offset = int(offset)
+    limit = request.args.get('limit')
+    if limit == None:
+        limit = '200'
+    limit = int(limit)
     rows = BillLog.query.filter_by(user_id=id).all()
+    rows = rows[len(rows)-offset-limit:len(rows)-offset]
     ret = []
     for row in rows:
         ret.append({'id': row.log_id, 'userid': row.user_id, 'action': row.action, 'amount': row.amount, 'date': row.date})

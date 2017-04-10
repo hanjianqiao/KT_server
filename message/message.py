@@ -170,10 +170,19 @@ def api_add():
 @app.route('/list', methods=['GET'])
 def api_list():
     id = request.args.get('userid')
+    offset = request.args.get('offset')
+    if offset == None:
+        offset = '0'
+    offset = int(offset)
+    limit = request.args.get('limit')
+    if limit == None:
+        limit = '200'
+    limit = int(limit)
     rows = Message.query.filter_by(user_id=id).all()
+    rows = rows[len(rows)-offset-limit:len(rows)-offset]
     ret = []
     for row in rows:
-        ret.append({'title': row.title, 'id': row.message_id})
+        ret.append({'title': row.title, 'date': row.date, 'id': row.message_id})
     ustatus = Status.query.filter_by(user_id=id).first()
     if ustatus != None:
         ustatus.new_comes = 'no'
