@@ -165,7 +165,13 @@ def api_list():
         limit = '200'
     limit = int(limit)
     rows = BillLog.query.filter_by(user_id=id).all()
-    rows = rows[len(rows)-offset-limit:len(rows)-offset]
+    startIndex = len(rows)-offset-limit
+    if startIndex < 0:
+        startIndex = 0
+    endIndex = len(rows)-offset
+    if endIndex < 0:
+        endIndex = 0
+    rows = rows[startIndex:endIndex]
     ret = []
     for row in rows:
         ret.append({'id': row.log_id, 'userid': row.user_id, 'action': row.action, 'amount': row.amount, 'date': row.date})
