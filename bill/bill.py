@@ -108,7 +108,7 @@ class MyModelView2(sqla.ModelView):
     column_labels = dict(log_id=u'记录编号', user_id=u'目标用户', action=u'操作', amount=u'数量', date=u'时间')
     column_searchable_list = ('log_id',)
 
-    column_filters = ('action',)
+    column_filters = ('action', 'user_id')
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:

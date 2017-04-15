@@ -174,20 +174,23 @@ def api_query():
         return jsonify({'status': 'failed', 'message': '密码错误'})
     inviter, code, email, qq, wechat, taobao, type, level, expire_year, expire_month, expire_day, balance, invitation_remain, extend_remain, invitee_total, invitee_vip, invitee_agent, team_total = ret[0][2:]
 
-    c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
+    c.execute("SELECT need_invite, need_extend, fee FROM deal_info WHERE user_id=?", (user_id,))
     ret = c.fetchall()
-    wait = ''
+    newvip = ''
+    newextend = ''
     if ret:
-        wait = ret[0][3]
+        newvip = ret[0][0]
+        newextend = ret[0][1]
     else:
-        wait = 'none'
+        newvip = '0'
+        newextend = '0'
 
     data = {'user_id': user_id, 'inviter': inviter, 'code': code,
             'email': email, 'qq': qq, 'wechat': wechat, 'taobao': taobao, 'type': type,
             'level': level, 'expire_year': expire_year, 'expire_month': expire_month,
             'expire_day': expire_day, 'balance': balance, 'invitation_remain': invitation_remain,
             'extend_remain': extend_remain, 'invitee_total': invitee_total, 'invitee_vip': invitee_vip,
-            'invitee_agent': invitee_agent, 'team_total': team_total, 'wait': wait}
+            'invitee_agent': invitee_agent, 'team_total': team_total, 'newvip': newvip, 'newextend': newextend}
     return jsonify({'status': 'ok', 'message': 'login ok', 'data': data})
 
 
@@ -314,139 +317,13 @@ def api_extendvip():
         # if ret:
         #     return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
 
-        return extendvip(user_id, month, str(int(month)*168))
+        return extendvip(user_id, month, str(int(month)*138))
     return jsonify({'status': 'failed', 'message': 'json data format error'})
-
-
-extendagentinfo = {
-        '1':{
-            'level':'level1',
-            'invite':'10',
-            'extend':'0',
-            'price':'2180'
-        },
-        '2':{
-            'level':'level1',
-            'invite':'0',
-            'extend':'10',
-            'price':'1280'
-        },
-        '3':{
-            'level':'level2',
-            'invite':'30',
-            'extend':'0',
-            'price':'5040'
-        },
-        '4':{
-            'level':'level2',
-            'invite':'0',
-            'extend':'30',
-            'price':'2940'
-        },
-        '5':{
-            'level':'level3',
-            'invite':'100',
-            'extend':'0',
-            'price':'13800'
-        },
-        '6':{
-            'level':'level3',
-            'invite':'0',
-            'extend':'100',
-            'price':'7800'
-        },
-        '7':{
-            'level':'level4',
-            'invite':'300',
-            'extend':'0',
-            'price':'35400'
-        },
-        '8':{
-            'level':'level4',
-            'invite':'0',
-            'extend':'300',
-            'price':'20400'
-        },
-        '9':{
-            'level':'level5',
-            'invite':'1000',
-            'extend':'0',
-            'price':'108000'
-        },
-        '10':{
-            'level':'level5',
-            'invite':'0',
-            'extend':'1000',
-            'price':'58000'
-        },
-        '11':{
-            'level':'level6',
-            'invite':'5000',
-            'extend':'0',
-            'price':'490000'
-        },
-        '12':{
-            'level':'level6',
-            'invite':'0',
-            'extend':'5000',
-            'price':'240000'
-        }
-    }
-
-
-@app.route('/extendagentinfo', methods=['POST'])
-def api_extendagentinfo():
-    return jsonify(extendagentinfo)
 
 
 @app.route('/extendagent', methods=['POST'])
 def api_extendagent():
-    if request.headers['Content-Type'] == 'application/json':
-        info_data = request.get_json(force=True, silent=True)
-        user_id = info_data.get('user_id', '')
-        password = info_data.get('password', '')
-        combo = info_data.get('combo', '')
-
-        # format check
-        if not (isinstance(user_id, str) and len(user_id) == 11 and all(map(lambda d: d.isdigit(), user_id))):
-            return jsonify({'status': 'failed', 'message': '用户名错误'})
-        if not (isinstance(password, str) and len(password) >= 6):
-            return jsonify({'status': 'failed', 'message': '密码错误'})
-
-        # user_id exists check
-        c = get_db().cursor()
-        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
-        ret = c.fetchall()
-        if not ret:
-            return jsonify({'status': 'failed', 'message': '用户名不存在'})
-        if not secret_check(password, ret[0][1]):
-            return jsonify({'status': 'failed', 'message': '密码错误'})
-        
-        # c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
-        # ret = c.fetchall()
-        # if ret:
-        #     oriReason = ret[0][3]
-        #     reason = '请联系客服'
-        #     if oriReason == 'up2vip':
-        #         reason = '升级VIP'
-        #     elif oriReason == 'extendvip':
-        #         reason = '续费VIP'
-        #     elif oriReason == 'level1':
-        #         reason = '购买铜牌套餐'
-        #     elif oriReason == 'level2':
-        #         reason = '购买银牌套餐'
-        #     elif oriReason == 'level3':
-        #         reason = '购金牌套餐'
-        #     elif oriReason == 'level4':
-        #         reason = '购买铂金套餐'
-        #     elif oriReason == 'level5':
-        #         reason = '购买钻石套餐'
-        #     elif oriReason == 'level6':
-        #         reason = '购买总代理套餐'
-        #     return jsonify({'status': 'failed', 'message': '未完成：' + reason})
-
-        return extendagent(user_id, extendagentinfo[combo]['level'], extendagentinfo[combo]['invite'], extendagentinfo[combo]['extend'], extendagentinfo[combo]['price'])
-    return jsonify({'status': 'failed', 'message': 'json data format error'})
+    return jsonify({'status': 'failed', 'message': '已停用套餐购买'})
 
 
 if __name__ == '__main__':
