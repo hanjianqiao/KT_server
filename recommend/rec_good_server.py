@@ -223,16 +223,12 @@ def upload_file():
                                 expire=expire_str)
                             db.session.add(item)
                         else:
-                            originItem.title=sheet.cell(row,0).value
-                            originItem.catalog=catalog
-                            originItem.activity=activity
-                            originItem.off=sheet.cell(row,3).value
-                            originItem.rate=sheet.cell(row,4).value
-                            originItem.image=sheet.cell(row,5).value
-                            originItem.url=sheet.cell(row,6).value
-                            originItem.price=sheet.cell(row,7).value
-                            originItem.sell=sheet.cell(row,8).value
-                            originItem.expire=expire_str
+                            db.session.delete(originItem)
+                            item = GoodInfo(title=sheet.cell(row,0).value, catalog=catalog, activity=activity,
+                                off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
+                                url=sheet.cell(row,6).value, price=sheet.cell(row,7).value, sell=sheet.cell(row,8).value,
+                                expire=expire_str)
+                            db.session.add(item)
                 db.session.commit()
                 os.remove('/home/lct/logs/tmp9s0d9.xls')
                 return u'上传成功'
