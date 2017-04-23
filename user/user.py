@@ -143,7 +143,7 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['user_id', 'password', 'inviter', 'code', 'email', 'qq', 'wechat', 'taobao', 'type', 'level', 'expire_year', 'expire_month', 'expire_day', 'balance', 'invitation_remain', 'extend_remain', 'invitee_total', 'invitee_vip', 'invitee_agent']
+    list_columns = ['user_id', 'inviter', 'code', 'qq', 'wechat', 'expire_year', 'expire_month', 'expire_day', 'type', 'level', 'balance', 'invitation_remain', 'extend_remain', 'invitee_total', 'invitee_vip', 'invitee_agent']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     column_sortable_list = ()
@@ -153,7 +153,7 @@ class MyModelView2(sqla.ModelView):
 
     column_searchable_list = ('user_id',)
 
-    column_filters = ('inviter',
+    column_filters = ('inviter', 'wechat',
                       filters.FilterLike(UserInfo.type, u'类型', options=(('user', u'普通用户'), ('vip', u'VIP及代理'))),
                       filters.FilterLike(UserInfo.level, u'代理级别',
                             options=(('level1', u'铜牌代理'), ('level2', u'银牌代理'), ('level3', u'金牌代理'), ('level4', u'铂金代理'), ('level5', u'钻石代理'), ('level6', u'联合创始人'))))

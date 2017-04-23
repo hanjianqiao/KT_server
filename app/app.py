@@ -50,8 +50,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
+    roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
     def __str__(self):
         return self.email
@@ -60,19 +59,22 @@ class User(db.Model, UserMixin):
 class AppStatus(db.Model):
     __tablename__ = 'app'
     log_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    version = db.Column(db.Text)
+    key = db.Column(db.Text)
+    value = db.Column(db.Text)
 
 
 class iOSStatus(db.Model):
     __tablename__ = 'ios'
     log_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    version = db.Column(db.Text)
+    key = db.Column(db.Text)
+    value = db.Column(db.Text)
 
 
 class AndroidStatus(db.Model):
     __tablename__ = 'android'
     log_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    version = db.Column(db.Text)
+    key = db.Column(db.Text)
+    value = db.Column(db.Text)
 
 
 # Setup Flask-Security
@@ -108,13 +110,13 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['log_id', 'version']
+    list_columns = ['log_id', 'key', 'value']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     #column_sortable_list = ()
 
     # Rename 'title' columns to 'Post Title' in list view
-    column_labels = dict(log_id=u'记录编号', version=u'最新版本')
+    column_labels = dict(log_id=u'记录编号', key=u'记录名称', value=u'记录值')
     #column_searchable_list = ('log_id',)
 
     #column_filters = ('action',)
@@ -149,31 +151,59 @@ def index():
 
 @app.route('/check', methods=['GET'])
 def api_check():
-    row = db.session.query(AppStatus).first()
-    ret = row.version
+    row_min = AppStatus.query.filter_by(key='min').first()
+    row_cur = AppStatus.query.filter_by(key='current').first()
+    min_version = '0'
+    cur_version = '0'
+    if row_min:
+        min_version = row_min.value
+    if row_cur:
+        cur_version = row_cur.value
     db.session.commit()
     return jsonify({'status': 'ok',
-                    'message': ret
+                    'message': cur_version,
+                    'min': min_version
                 })
 
 @app.route('/ios', methods=['GET'])
 def api_ios():
-    row = db.session.query(iOSStatus).first()
-    ret = row.version
+    row_min = iOSStatus.query.filter_by(key='min').first()
+    row_cur = iOSStatus.query.filter_by(key='current').first()
+    min_version = '0'
+    cur_version = '0'
+    if row_min:
+        min_version = row_min.value
+    if row_cur:
+        cur_version = row_cur.value
     db.session.commit()
     return jsonify({'status': 'ok',
-                    'message': ret
+                    'message': cur_version,
+                    'min': min_version
                 })
 
 @app.route('/android', methods=['GET'])
 def api_android():
-    row = db.session.query(AndroidStatus).first()
-    ret = row.version
+    row_min = AndroidStatus.query.filter_by(key='min').first()
+    row_cur = AndroidStatus.query.filter_by(key='current').first()
+    min_version = '0'
+    cur_version = '0'
+    if row_min:
+        min_version = row_min.value
+    if row_cur:
+        cur_version = row_cur.value
     db.session.commit()
     return jsonify({'status': 'ok',
-                    'message': ret
+                    'message': cur_version,
+                    'min': min_version
                 })
 
+
+@app.route('/init', methods=['GET'])
+def api_init():
+    app_dir = os.path.realpath(os.path.dirname(__file__))
+    database_path = os.path.join(app_dir, app.config['DATABASE_FILE'])
+    if not os.path.exists(database_path):
+        build_sample_db()
 
 # Create admin
 admin = flask_admin.Admin(
