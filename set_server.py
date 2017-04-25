@@ -152,6 +152,8 @@ def api_register():
             return jsonify({'status': 'failed', 'message': '密码格式错误，请使用6位以上密码'})
         if not (isinstance(code, str) and len(code) == 6 and all(map(lambda d: d.isdigit(), code))):
             return jsonify({'status': 'failed', 'message': '邀请码格式错误'})
+        if code == '000000':
+            return jsonify({'status': 'failed', 'message': '邀请码错误'})
         #if not (isinstance(email, str) and re.match(r'[^@]+@[^@]+\.[^@]+', email)):
         #    return jsonify({'status': 'failed', 'message': '邮件格式错误'})
 
