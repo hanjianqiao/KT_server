@@ -260,7 +260,7 @@ def download_file():
         jsonify({'status': 'ok',
                     'message': "没有数据"
                 })
-    column_names = ['title', 'image', 'url', 'price', 'sell', 'expire']
+    column_names = ['title', 'image', 'url', 'price', 'sell', 'expire', 'tb_token']
     response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
     cd = 'attachment; filename=expiredSelfGood.xls'
     response.headers['Content-Disposition'] = cd
