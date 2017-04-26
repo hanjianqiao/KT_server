@@ -72,6 +72,7 @@ class GoodInfo(db.Model):
     sell = db.Column(db.Integer)
     url = db.Column(db.Text)
     expire = db.Column(db.Text)
+    tb_token = db.Column(db.Text)
 
 
 class OffGoodInfo(db.Model):
@@ -83,6 +84,7 @@ class OffGoodInfo(db.Model):
     sell = db.Column(db.Integer)
     url = db.Column(db.Text)
     expire = db.Column(db.Text)
+    tb_token = db.Column(db.Text)
 
 
 # Setup Flask-Security
@@ -118,13 +120,13 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['good_id', 'title', 'price', 'sell', 'url', 'expire']
+    list_columns = ['good_id', 'title', 'price', 'sell', 'url', 'expire', 'tb_token']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     column_sortable_list = ('good_id', 'title', 'price', 'sell', 'url', 'expire')
 
     # Rename 'title' columns to 'Post Title' in list view
-    column_labels = dict(good_id=u'商品编号', title=u'标题', image=u'图片', price=u'现价', sell=u'销量', url=u'淘宝链接', expire=u'下架时间')
+    column_labels = dict(good_id=u'商品编号', title=u'标题', image=u'图片', price=u'现价', sell=u'销量', url=u'淘宝链接', expire=u'下架时间', tb_token=u'淘口令')
     column_searchable_list = ('good_id',)
 
     column_filters = ('title', 'url', 'good_id', 'expire')
@@ -194,7 +196,7 @@ def upload_file():
                     for row in range(1, number_of_rows):
                         originItem = GoodInfo.query.filter_by(url=sheet.cell(row,2).value).first()
                         expire_str = ''
-                        print("####row is %s" % sheet.cell(row,5).value)
+                        #print("####row is %s" % sheet.cell(row,5).value)
                         if type(sheet.cell(row,5).value) is str:
                             excel_date = datetime.datetime.strptime(sheet.cell(row,5).value, '%Y-%m-%d %H:%M:%S')
                             expire_str = ''+str(excel_date.year)+'/'+str(excel_date.month)+'/'+str(excel_date.day)
@@ -204,7 +206,7 @@ def upload_file():
                         if originItem == None:
                             item = GoodInfo(title=sheet.cell(row,0).value, image=sheet.cell(row,1).value,
                                 url=sheet.cell(row,2).value, price=sheet.cell(row,3).value, sell=sheet.cell(row,4).value,
-                                expire=expire_str)
+                                expire=expire_str, tb_token=sheet.cell(row,6).value)
                             db.session.add(item)
                         else:
                             originItem.title=sheet.cell(row,0).value
@@ -213,6 +215,7 @@ def upload_file():
                             originItem.price=sheet.cell(row,3).value
                             originItem.sell=sheet.cell(row,4).value
                             originItem.expire=expire_str
+                            originItem.tb_token=sheet.cell(row,6).value
                 db.session.commit()
                 ## for deploy
                 os.remove('/home/lct/logs/tmp9s0d9.xls')
@@ -385,8 +388,13 @@ def api_query():
     rows = GoodInfo.query.filter_by(good_id=id).all()
     ret = []
     for row in rows:
-        ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
+        if row.tb_token==None or row.tb_token == '':
+            ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
                     'price': str(row.price), 'url': row.url})
+        else:
+            ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
+                    'price': str(row.price), 'url': row.tb_token})
+
     return jsonify({'status': 'ok',
                     'message': ret
                 })
