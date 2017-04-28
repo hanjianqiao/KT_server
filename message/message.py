@@ -113,9 +113,9 @@ class MyModelView2(sqla.ModelView):
 
     # Rename 'title' columns to 'Post Title' in list view
     column_labels = dict(message_id=u'消息编号', user_id=u'目标用户', title=u'标题', body=u'内容', date=u'时间')
-    column_searchable_list = ('message_id',)
+    column_searchable_list = ('title',)
 
-    column_filters = ('title',)
+    column_filters = ('user_id', 'title', 'body', 'date')
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:

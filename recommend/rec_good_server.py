@@ -272,10 +272,10 @@ def api_query():
     for row in rows:
         if row.tb_token==None or row.tb_token == '':
             ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
-                    'price': row.price, 'url': row.url, 'off': row.off, 'rate': row.rate})
+                    'price': row.price, 'url': row.url, 'off': row.off, 'rate': row.rate, 'tb_token': ''})
         else:
             ret.append({'good_id': row.good_id, 'title': row.title, 'image': row.image, 'sell': row.sell,
-                    'price': row.price, 'url': row.tb_token, 'off': row.off, 'rate': row.rate})
+                    'price': row.price, 'url': row.url, 'off': row.off, 'rate': row.rate, 'tb_token': row.tb_token})
 
     return jsonify({'status': 'ok',
                     'message': ret
