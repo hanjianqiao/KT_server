@@ -132,6 +132,15 @@ crontab  -e
 58 0 * * * python3 /home/lct/user.server/periodic_self.py
 ```
 
+```
+sudo crontab -u root -e
+```
+
+```
+# file add line
+17 3 1 * * apache2ctl restart
+```
+
 
 
 ### Recommend good server

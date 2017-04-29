@@ -117,6 +117,33 @@ def get_db():
         db.commit()
     return db
 
+def thisMonthRecordTable():
+    c = get_db().cursor()
+    c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    rets = c.fetchall()
+    now = datetime.datetime.now()
+    thisMonthTableName = 'record_' + str(now.year) + '_' + str(now.month)
+    for ret in rets:
+        print(ret[0] + str(ret[0] == thisMonthTableName))
+        if(ret[0] == thisMonthTableName):
+            return thisMonthTableName
+    c.execute("""
+        CREATE TABLE """ + thisMonthTableName + """ (deal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                user_id TEXT,
+                                inviter_id TEXT,
+                                type TEXT,
+                                need_invite TEXT,
+                                need_extend TEXT,
+                                fee TEXT,
+                                end_year TEXT,
+                                end_month TEXT,
+                                end_day TEXT,
+                                end_hour TEXT,
+                                end_minute TEXT,
+                                interval TEXT)
+        """)
+    return thisMonthTableName
+
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -267,14 +294,15 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
               (inviter_balance, invitee_vip, invitation_remain, inviter,))
 
     # record number of vip
-    c.execute("SELECT need_invite, need_extend, fee FROM deal_info WHERE user_id=?", (inviter,))
+    recordTable = thisMonthRecordTable()
+    c.execute("SELECT need_invite, need_extend, fee FROM "+ recordTable +" WHERE user_id=?", (inviter,))
     ret = c.fetchall()
     if ret:
         need_invite = str(int(ret[0][0])+1)
-        c.execute("UPDATE deal_info SET need_invite = ? WHERE user_id = ?",
+        c.execute("UPDATE "+ recordTable +" SET need_invite = ? WHERE user_id = ?",
               (need_invite, inviter,))
     else:
-        c.execute("INSERT INTO deal_info (user_id, need_invite, need_extend, fee) VALUES (?, ?, ?, ?)",
+        c.execute("INSERT INTO "+ recordTable +" (user_id, need_invite, need_extend, fee) VALUES (?, ?, ?, ?)",
                 (inviter, '1', '0', '0'))
 
     get_db().commit()
@@ -452,14 +480,15 @@ def extendvip(user_id, extend_month, fee, log):
         mes2user(searchTarget, '联合：用户延长VIP', '用户'+user_id+'VIP延长'+extend_month+'个月')
 
         # record number of vip
-        c.execute("SELECT need_invite, need_extend, fee FROM deal_info WHERE user_id=?", (inviter,))
+        recordTable = thisMonthRecordTable()
+        c.execute("SELECT need_invite, need_extend, fee FROM "+ recordTable +" WHERE user_id=?", (inviter,))
         ret = c.fetchall()
         if ret:
-            need_extend = str(int(ret[0][0])+int(extend_month))
-            c.execute("UPDATE deal_info SET need_extend = ? WHERE user_id = ?",
+            need_extend = str(int(ret[0][1])+int(extend_month))
+            c.execute("UPDATE "+ recordTable +" SET need_extend = ? WHERE user_id = ?",
                   (need_extend, inviter,))
         else:
-            c.execute("INSERT INTO deal_info (user_id, need_invite, need_extend, fee) VALUES (?, ?, ?, ?)",
+            c.execute("INSERT INTO "+ recordTable +" (user_id, need_invite, need_extend, fee) VALUES (?, ?, ?, ?)",
                     (inviter, '0', extend_month, '0'))
 
         get_db().commit()

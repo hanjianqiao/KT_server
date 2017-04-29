@@ -12,6 +12,7 @@ from flask_admin import helpers as admin_helpers
 from flask.ext.admin.contrib.sqla import filters
 import ssl
 from flask_babelex import Babel
+import datetime
 
 
 
@@ -21,6 +22,8 @@ app.config.from_pyfile('config.py')
 babel = Babel(app)
 app.config['BABEL_DEFAULT_LOCALE'] = 'zh_CN'
 db = SQLAlchemy(app)
+now = datetime.datetime.now()
+thisMonthTableName = 'record_' + str(now.year) + '_' + str(now.month)
 
 
 # Define models
@@ -56,7 +59,7 @@ class User(db.Model, UserMixin):
 
 
 class DealInfo(db.Model):
-    __tablename__ = 'deal_info'
+    __tablename__ = thisMonthTableName
     deal_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Text)
     inviter_id = db.Column(db.Text)
