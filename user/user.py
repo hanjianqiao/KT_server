@@ -156,7 +156,7 @@ class MyModelView2(sqla.ModelView):
 
     column_searchable_list = ('user_id',)
 
-    column_filters = ('inviter', 'wechat',
+    column_filters = ('inviter', 'wechat', 'code', 
                       filters.FilterLike(UserInfo.type, u'类型', options=(('user', u'普通用户'), ('vip', u'VIP及代理'))),
                       filters.FilterLike(UserInfo.level, u'代理级别',
                             options=(('level1', u'铜牌代理'), ('level2', u'银牌代理'), ('level3', u'金牌代理'), ('level4', u'铂金代理'), ('level5', u'钻石代理'), ('level6', u'联合创始人'))))

@@ -558,6 +558,11 @@ def drawback():
     return jsonify({'status': 'ok', 'message': user_id+'操作后金额：'+newValue})
 
 
+@app.route('/dealinfocheck', methods=['GET'])
+def dealinfocheck():
+    return jsonify({'status': 'ok', 'message': thisMonthRecordTable()})
+
+
 if __name__ == '__main__':
     #context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
     #app.run(host='0.0.0.0', port=10010, ssl_context=context)

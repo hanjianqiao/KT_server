@@ -132,15 +132,6 @@ crontab  -e
 58 0 * * * python3 /home/lct/user.server/periodic_self.py
 ```
 
-```
-sudo crontab -u root -e
-```
-
-```
-# file add line
-17 3 1 * * apache2ctl restart
-```
-
 
 
 ### Recommend good server
@@ -480,5 +471,15 @@ crontab  -e
 ```
 # file add line
 3,16,24,33,41,50 * * * * python3 /home/lct/user.server/periodic_user.py
+0 0 1 * * curl localhost:10010/dealinfocheck
+```
+
+```
+sudo crontab -u root -e
+```
+
+```
+# file add line
+1 0 1 * * apache2ctl restart
 ```
 

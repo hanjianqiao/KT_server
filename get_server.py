@@ -326,6 +326,20 @@ def api_extendagent():
     return jsonify({'status': 'failed', 'message': '已停用套餐购买'})
 
 
+@app.route('/dealinfocheck', methods=['GET'])
+def dealinfocheck():
+    connection = http.client.HTTPConnection('localhost', 10010)
+    foo = { "user_id":'userid',
+            "extend_month":'',
+            "fee":'fee'}
+    json_foo = json.dumps(foo)
+    connection.request('GET', '/dealinfocheck', json_foo, headers)
+    response = connection.getresponse()
+    ret = (response.read().decode())
+    connection.close()
+    return ret
+
+
 if __name__ == '__main__':
     #context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
     #app.run(host='0.0.0.0', port=10000, ssl_context=context, debug=True)
