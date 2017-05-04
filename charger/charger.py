@@ -136,6 +136,8 @@ def do_charge():
     userid = request.form['userid']
     action = request.form['action']
     amount = request.form['amount']
+    if userid == '':
+        return home('请输入用户名')
     # charge user
     # headers
     headers = {'Content-type': 'application/json'}
@@ -144,14 +146,20 @@ def do_charge():
             "amount":amount}
     json_foo = json.dumps(foo)
     if action == '0':
+        if amount == '':
+            return home('金额不能为空')
         connection.request('POST', '/charge', json_foo, headers)
-    else:
+    elif action == '1':
+        if amount == '':
+            return home('金额不能为空')
         connection.request('POST', '/drawback', json_foo, headers)
+    else:
+        connection.request('POST', '/sysup2vip', json_foo, headers)
     response = connection.getresponse()
     ret = (response.read().decode())
     connection.close()
     jo = json.loads(ret)
-    if jo['status'] == 'ok':
+    if jo['status'] == 'ok' and action != '2':
         logitem = MoneyLog()
         logitem.userid = userid
         logitem.action = action
@@ -266,7 +274,7 @@ if __name__ == '__main__':
         build_sample_db()
     #add_admin_user()
     # Start app
-    context = ('/home/lct/user.server/sslcrts/user.vsusvip.com/user.vsusvip.com.pem',
-        '/home/lct/user.server/sslcrts/user.vsusvip.com/user.vsusvip.com.key')
-    app.run(host='0.0.0.0', port=2100, ssl_context=context, debug=True)
-    #app.run(host='0.0.0.0', port=2100, debug=True)
+    #context = ('/home/lct/user.server/sslcrts/user.vsusvip.com/user.vsusvip.com.pem',
+    #    '/home/lct/user.server/sslcrts/user.vsusvip.com/user.vsusvip.com.key')
+    #app.run(host='0.0.0.0', port=2100, ssl_context=context, debug=True)
+    app.run(host='0.0.0.0', port=2100, debug=True)

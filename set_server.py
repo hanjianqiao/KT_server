@@ -253,28 +253,42 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     invitation_remain = inviter_row[0][1]
     inviter_balance = inviter_row[0][2]
 
-    if int(invitation_remain) < 1:
-        searchTarget = inviter
-        while True:
-            c.execute("SELECT inviter, invitation_remain FROM user_info WHERE user_id = ?", (searchTarget,))
-            ret = c.fetchall()
-            if int(ret[0][1]) > 0:
-                break;
-            if searchTarget == '13800000000':
-                break;
-            searchTarget = ret[0][0]
-        c.execute("SELECT invitation_remain FROM user_info WHERE user_id = ?", (searchTarget,))
+    # update agent's information
+    searchTarget = inviter
+    while True:
+        if searchTarget == '13800000000':
+            break;
+        c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
         ret = c.fetchall()
-        new_int_remain = str(int(ret[0][0])-1)
-        c.execute("UPDATE user_info SET invitation_remain = ? WHERE user_id = ?",
-              (new_int_remain, searchTarget,))
+        if ret[0][4] == 'agent' or ret[0][4] == 'golden' or ret[0][4] == 'cofound':
+            break;
+        searchTarget = ret[0][3]
+    # check agent's vip
+    c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
+    ret = c.fetchall()
+    now = datetime.datetime.now()
+    isExpired = False
+    if int(ret[0][0]) < now.year:
+        isExpired = True
+    elif int(ret[0][0]) == now.year:
+        if int(ret[0][1]) < now.month:
+            isExpired = True
+        elif int(ret[0][1]) == now.month:
+            if int(ret[0][2]) < now.day:
+                isExpired = True
+    if isExpired == True:
+        return jsonify({'status': 'failed', 'message': '上级代理'+searchTarget+'目前不是会员，您无法加入会员'})
+    # agent remain
+    c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(searchTarget,))
+    agent_row = c.fetchall()
+    agent_remain = inviter_row[0][1]
+    if int(agent_remain) < 1:
+        return jsonify({'status': 'failed', 'message': '您好，欢迎加入小牛会员，但由于您的上级代理:'+ searchTarget +'暂无邀请次数，请让她/他联系“小牛快淘”公众号，确认充值成功后方可开通。'})
+    else:
+        agent_remain = str(int(agent_remain)-1)
+        #inviter_balance = str(int(inviter_balance)+int(fee))
         mes2user(searchTarget, '邀请次数被使用', '用户'+user_id+'使用你的邀请次数升级VIP')
         mes2user(user_id, '使用代理邀请次数升级', '您使用'+searchTarget+'的邀请次数升级为VIP')
-    else:
-        invitation_remain = str(int(invitation_remain)-1)
-        #inviter_balance = str(int(inviter_balance)+int(fee))
-        mes2user(inviter, '邀请次数被使用', '用户'+user_id+'使用你的邀请次数升级VIP')
-        mes2user(user_id, '使用代理邀请次数升级', '您使用'+inviter+'的邀请次数升级为VIP')
         #mes2bil(inviter, '售出邀请名额', '+'+fee)
 
     invitee_vip = str(int(invitee_vip)+1)
@@ -290,8 +304,8 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
                                   (user_balance, expire_year, expire_month, expire_day, code, 'vip', 'vip', user_id,))
 
     # update inviter's information
-    c.execute("UPDATE user_info SET balance = ?, invitee_vip = ?, invitation_remain = ? WHERE user_id = ?",
-              (inviter_balance, invitee_vip, invitation_remain, inviter,))
+    c.execute("UPDATE user_info SET invitee_vip = ? WHERE user_id = ?",
+              (invitee_vip, inviter,))
 
     # record number of vip
     recordTable = thisMonthRecordTable()
@@ -323,6 +337,220 @@ def api_up2vip():
         fee = info_data.get('fee', '')
 
         return up2vip(user_id, expire_year, expire_month, expire_day, fee, True)
+
+    return jsonify({'status': 'failed'})
+
+
+def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
+    c = get_db().cursor()
+
+    # check inviter's remains
+    c.execute("SELECT inviter, balance, level FROM user_info WHERE user_id = ?", (user_id,))
+    inviter_row = c.fetchall()
+    inviter = inviter_row[0][0]
+    user_balance = inviter_row[0][1]
+    user_level = inviter_row[0][2]
+    c.execute("SELECT expire_year, expire_month, expire_day FROM user_info WHERE user_id= ?", (inviter,))
+    ret = c.fetchall()
+    now = datetime.datetime.now()
+    isExpired = False
+    if int(ret[0][0]) < now.year:
+        isExpired = True
+    elif int(ret[0][0]) == now.year:
+        if int(ret[0][1]) < now.month:
+            isExpired = True
+        elif int(ret[0][1]) == now.month:
+            if int(ret[0][2]) < now.day:
+                isExpired = True
+    if isExpired == True:
+        return jsonify({'status': 'failed', 'message': '邀请者'+inviter+'目前不是会员，无法邀请您加入'})
+    if user_level != 'user':
+        return jsonify({'status': 'failed', 'message': user_id+'已经是VIP'})
+    if int(user_balance) < int(fee):
+        return jsonify({'status': 'failed', 'message': user_id+'帐户余额不足'})
+    c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
+    inviter_row = c.fetchall()
+    invitee_vip = inviter_row[0][0]
+    invitation_remain = inviter_row[0][1]
+    inviter_balance = inviter_row[0][2]
+
+    # update agent's information
+    searchTarget = inviter
+    while True:
+        if searchTarget == '13800000000':
+            break;
+        c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
+        ret = c.fetchall()
+        if ret[0][4] == 'agent' or ret[0][4] == 'golden' or ret[0][4] == 'cofound':
+            break;
+        searchTarget = ret[0][3]
+    # check agent's vip
+    c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
+    ret = c.fetchall()
+    now = datetime.datetime.now()
+    isExpired = False
+    if int(ret[0][0]) < now.year:
+        isExpired = True
+    elif int(ret[0][0]) == now.year:
+        if int(ret[0][1]) < now.month:
+            isExpired = True
+        elif int(ret[0][1]) == now.month:
+            if int(ret[0][2]) < now.day:
+                isExpired = True
+    if isExpired == True:
+        return jsonify({'status': 'failed', 'message': '上级代理'+searchTarget+'目前不是会员'})
+    # agent remain
+    c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(searchTarget,))
+    agent_row = c.fetchall()
+    agent_remain = agent_row[0][1]
+    if int(agent_remain) > 0:
+        return jsonify({'status': 'failed', 'message': '代理'+ searchTarget +'剩余邀请次数'})
+    else:
+        mes2user(user_id, '系统为您升级VIP', '系统为你升级为VIP')
+
+    invitee_vip = str(int(invitee_vip)+1)
+    user_balance = str(int(user_balance)-int(fee))
+
+    # update user's infomation
+    c.execute("SELECT expire_year FROM user_info WHERE user_id = 13900000000")
+    inviter_row = c.fetchall()
+    code = inviter_row[0][0]
+    newValue = str(int(code)+1)
+    c.execute("UPDATE user_info SET expire_year = ? WHERE user_id = 13900000000",(newValue,))
+    c.execute("UPDATE user_info SET balance = ?, expire_year = ?, expire_month = ?, expire_day = ?, code = ?, type = ?, level = ? WHERE user_id = ?",
+                                  (user_balance, expire_year, expire_month, expire_day, code, 'vip', 'vip', user_id,))
+
+    # update inviter's information
+    c.execute("UPDATE user_info SET invitee_vip = ? WHERE user_id = ?",
+              (invitee_vip, inviter,))
+
+    # record number of vip
+    recordTable = thisMonthRecordTable()
+    c.execute("SELECT need_invite, need_extend, fee FROM "+ recordTable +" WHERE user_id=?", (inviter,))
+    ret = c.fetchall()
+    if ret:
+        need_invite = str(int(ret[0][0])+1)
+        c.execute("UPDATE "+ recordTable +" SET need_invite = ? WHERE user_id = ?",
+              (need_invite, inviter,))
+    else:
+        c.execute("INSERT INTO "+ recordTable +" (user_id, need_invite, need_extend, fee) VALUES (?, ?, ?, ?)",
+                (inviter, '1', '0', '0'))
+
+    get_db().commit()
+    mes2user(user_id, '恭喜升级VIP', '欢迎加入VIP，现在请使用佣金及优惠券查询功能')
+    mes2user(inviter, '下级升级VIP', '您的下级已升级为VIP：'+user_id)
+    mes2bil(user_id, '购买VIP', '-'+fee)
+
+    # update inviter's information
+    c.execute("SELECT balance FROM user_info WHERE user_id = ?",(inviter,))
+    inviter_row = c.fetchall()
+    inviter_balance = str(int(inviter_row[0][0])+140)
+    c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
+              (inviter_balance, inviter,))
+    mes2bil(inviter, '邀请用户开通：'+user_id, '+'+str(140))
+    mes2user(inviter, '用户开通VIP', '您邀请的用户'+user_id+'开通VIP')
+
+    # update agent's information
+    searchTarget = inviter
+    while True:
+        c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
+        ret = c.fetchall()
+        now = datetime.datetime.now()
+        isExpired = False
+        if int(ret[0][0]) < now.year:
+            isExpired = True
+        elif int(ret[0][0]) == now.year:
+            if int(ret[0][1]) < now.month:
+                isExpired = True
+            elif int(ret[0][1]) == now.month:
+                if int(ret[0][2]) < now.day:
+                    isExpired = True
+        if (isExpired == False) and (ret[0][4] == 'agent' or ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
+            break;
+        if searchTarget == '13800000000':
+            break;
+        searchTarget = ret[0][3]
+    c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
+    inviter_row = c.fetchall()
+    inviter_balance = str(int(inviter_row[0][0])+30)
+    c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
+              (inviter_balance, searchTarget,))
+    mes2bil(searchTarget, '代理VIP开通收益：'+user_id, '+'+str(30))
+    mes2user(searchTarget, '代理：用户开通VIP', '用户'+user_id+'开通VIP')
+
+    # update golden's information
+    searchTarget = inviter
+    while True:
+        c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
+        ret = c.fetchall()
+        now = datetime.datetime.now()
+        isExpired = False
+        if int(ret[0][0]) < now.year:
+            isExpired = True
+        elif int(ret[0][0]) == now.year:
+            if int(ret[0][1]) < now.month:
+                isExpired = True
+            elif int(ret[0][1]) == now.month:
+                if int(ret[0][2]) < now.day:
+                    isExpired = True
+        if (isExpired == False) and (ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
+            break;
+        if searchTarget == '13800000000':
+            break;
+        searchTarget = ret[0][3]
+    c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
+    inviter_row = c.fetchall()
+    inviter_balance = str(int(inviter_row[0][0])+10)
+    c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
+              (inviter_balance, searchTarget,))
+    mes2bil(searchTarget, '金牌VIP开通收益：'+user_id, '+'+str(10))
+    mes2user(searchTarget, '金牌：用户开通VIP', '用户'+user_id+'开通VIP')
+
+    # update cofound's information
+    searchTarget = inviter
+    while True:
+        c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
+        ret = c.fetchall()
+        now = datetime.datetime.now()
+        isExpired = False
+        if int(ret[0][0]) < now.year:
+            isExpired = True
+        elif int(ret[0][0]) == now.year:
+            if int(ret[0][1]) < now.month:
+                isExpired = True
+            elif int(ret[0][1]) == now.month:
+                if int(ret[0][2]) < now.day:
+                    isExpired = True
+        if (isExpired == False) and (ret[0][4] == 'cofound'):
+            break;
+        if searchTarget == '13800000000':
+            break;
+        searchTarget = ret[0][3]
+    c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
+    inviter_row = c.fetchall()
+    inviter_balance = str(int(inviter_row[0][0])+20)
+    c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
+              (inviter_balance, searchTarget,))
+    mes2bil(searchTarget, '联合VIP开通收益：'+user_id, '+'+str(20))
+    mes2user(searchTarget, '联合：用户开通VIP', '用户'+user_id+'开通VIP')
+
+    get_db().commit()
+
+    return jsonify({'status': 'ok', 'message': user_id+'升级VIP成功'})
+
+
+@app.route('/sysup2vip', methods=['POST'])
+def api_sysup2vip():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+        expire_year = info_data.get('expire_year', '')
+        expire_month = info_data.get('expire_month', '')
+        expire_day = info_data.get('expire_day', '')
+        fee = info_data.get('fee', '')
+        
+        now = datetime.datetime.now()
+        return sysup2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '298', False)
 
     return jsonify({'status': 'failed'})
 
