@@ -223,7 +223,7 @@ def api_register():
 def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     c = get_db().cursor()
 
-    # check inviter's remains
+    # check inviter's status
     c.execute("SELECT inviter, balance, level FROM user_info WHERE user_id = ?", (user_id,))
     inviter_row = c.fetchall()
     inviter = inviter_row[0][0]
@@ -243,17 +243,19 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
                 isExpired = True
     if isExpired == True:
         return jsonify({'status': 'failed', 'message': '您的邀请者'+inviter+'目前不是会员，无法邀请您加入'})
+    # check user's status
     if user_level != 'user':
         return jsonify({'status': 'failed', 'message': '你已经是VIP'})
     if int(user_balance) < int(fee):
         return jsonify({'status': 'failed', 'message': '帐户余额不足，请点击头像进入财富中心充值'})
-    c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(inviter,))
+
+    # get inviter info
+    c.execute("SELECT invitee_vip FROM user_info WHERE user_id = ?",(inviter,))
     inviter_row = c.fetchall()
     invitee_vip = inviter_row[0][0]
-    invitation_remain = inviter_row[0][1]
-    inviter_balance = inviter_row[0][2]
 
     # update agent's information
+    # get the closest agent
     searchTarget = inviter
     while True:
         if searchTarget == '13800000000':
@@ -281,7 +283,7 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     # agent remain
     c.execute("SELECT invitee_vip, invitation_remain, balance FROM user_info WHERE user_id = ?",(searchTarget,))
     agent_row = c.fetchall()
-    agent_remain = inviter_row[0][1]
+    agent_remain = agent_row[0][1]
     if int(agent_remain) < 1:
         return jsonify({'status': 'failed', 'message': '您好，欢迎加入小牛会员，但由于您的上级代理:'+ searchTarget +'暂无邀请次数，请让她/他联系“小牛快淘”公众号，确认充值成功后方可开通。'})
     else:
@@ -289,6 +291,11 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
         #inviter_balance = str(int(inviter_balance)+int(fee))
         mes2user(searchTarget, '邀请次数被使用', '用户'+user_id+'使用你的邀请次数升级VIP')
         mes2user(user_id, '使用代理邀请次数升级', '您使用'+searchTarget+'的邀请次数升级为VIP')
+
+        # update agent's remain
+        c.execute("UPDATE user_info SET invitation_remain = ? WHERE user_id = ?",
+                  (agent_remain, searchTarget,))
+
         #mes2bil(inviter, '售出邀请名额', '+'+fee)
 
     invitee_vip = str(int(invitee_vip)+1)

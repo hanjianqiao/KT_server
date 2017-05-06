@@ -201,6 +201,11 @@ def api_login():
 
 @app.route('/login0', methods=['POST'])
 def api_login0():
+    return jsonify({'status': 'failed', 'message': '此版已被无法继续使用，请尽快升级至最新版。下载地址请关注“小牛快淘”微信公众号，回复“最新版本”即可。'})
+
+
+@app.route('/login1', methods=['POST'])
+def api_login1():
     #print(request.data)
     if request.headers['Content-Type'] == 'application/json':
         info_data = request.get_json(force=True, silent=True)

@@ -111,7 +111,7 @@ File:
 ```
 # nginx_self_good.conf
 server {
-    listen          7008;
+    listen          7080;
     server_name     self.vsusvip.com;
     location / {
         proxy_pass http://localhost:13000;
@@ -203,7 +203,7 @@ File:
 ```
 # nginx_rec_good.conf
 server {
-    listen          7010;
+    listen          7011;
     server_name     shop.vsusvip.com;
     location / {
         proxy_pass http://localhost:14000;
