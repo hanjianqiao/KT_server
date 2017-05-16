@@ -120,7 +120,7 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['good_id', 'title', 'price', 'sell', 'url', 'expire', 'tb_token']
+    list_columns = ['good_id', 'title', 'price', 'sell', 'url', 'expire']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     column_sortable_list = ('good_id', 'title', 'price', 'sell', 'url', 'expire')
@@ -206,7 +206,7 @@ def upload_file():
                         if originItem == None:
                             item = GoodInfo(title=sheet.cell(row,0).value, image=sheet.cell(row,1).value,
                                 url=sheet.cell(row,2).value, price=sheet.cell(row,3).value, sell=sheet.cell(row,4).value,
-                                expire=expire_str, tb_token=sheet.cell(row,6).value)
+                                expire=expire_str, tb_token='')
                             db.session.add(item)
                         else:
                             originItem.title=sheet.cell(row,0).value
@@ -215,7 +215,7 @@ def upload_file():
                             originItem.price=sheet.cell(row,3).value
                             originItem.sell=sheet.cell(row,4).value
                             originItem.expire=expire_str
-                            originItem.tb_token=sheet.cell(row,6).value
+                            originItem.tb_token=''
                 db.session.commit()
                 ## for deploy
                 os.remove('/home/lct/logs/tmp9s0d9.xls')
@@ -260,7 +260,7 @@ def download_file():
         jsonify({'status': 'ok',
                     'message': "没有数据"
                 })
-    column_names = ['title', 'image', 'url', 'price', 'sell', 'expire', 'tb_token']
+    column_names = ['title', 'image', 'url', 'price', 'sell', 'expire']
     response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
     cd = 'attachment; filename=expiredSelfGood.xls'
     response.headers['Content-Disposition'] = cd

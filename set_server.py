@@ -11,6 +11,7 @@ import ast
 import ssl
 import http.client
 import sys
+import json
 
 app = Flask(__name__)
 
@@ -411,7 +412,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     agent_row = c.fetchall()
     agent_remain = agent_row[0][1]
     if int(agent_remain) > 0:
-        return jsonify({'status': 'failed', 'message': '代理'+ searchTarget +'剩余邀请次数'})
+        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '298', False)
     else:
         mes2user(user_id, '系统为您升级VIP', '系统为你升级为VIP')
 
@@ -739,6 +740,41 @@ def api_extendvip():
         fee = info_data.get('fee', '')
 
         return extendvip(user_id, extend_month, fee, True)
+        
+    return jsonify({'status': 'failed'})
+
+
+@app.route('/syschaextvip', methods=['POST'])
+def syschaextvip():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+        # user_id exists check
+        c = get_db().cursor()
+        c.execute("SELECT * FROM user_info WHERE user_id=?", (user_id,))
+        ret = c.fetchall()
+        if not ret:
+            return jsonify({'status': 'failed', 'message': '用户名不存在'})
+        c.execute("SELECT balance FROM user_info WHERE user_id = ?", (user_id,))
+        inviter_row = c.fetchall()
+        balance = inviter_row[0][0]
+        newValue = str(int(balance)+138)
+        c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
+        get_db().commit()
+        mes2user(user_id, '充值成功', '充值金额：138元')
+        mes2bil(user_id, '充值', '+138')
+        return extendvip(user_id, '1', '138', True)
+        
+    return jsonify({'status': 'failed'})
+
+
+@app.route('/sysextvip', methods=['POST'])
+def sysextvip():
+    if request.headers['Content-Type'] == 'application/json':
+        info_data = request.get_json(force=True, silent=True)
+        user_id = info_data.get('user_id', '')
+
+        return extendvip(user_id, '1', '138', True)
         
     return jsonify({'status': 'failed'})
 

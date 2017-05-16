@@ -1,5 +1,5 @@
 # Create dummy secrey key so we can use sessions
-SECRET_KEY = 'lanchourbutgood98347'
+SECRET_KEY = 'lanchisoie9'
 
 # Create in-memory database
 DATABASE_FILE = 'message.db'

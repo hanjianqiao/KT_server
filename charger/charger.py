@@ -153,13 +153,28 @@ def do_charge():
         if amount == '':
             return home('金额不能为空')
         connection.request('POST', '/drawback', json_foo, headers)
-    else:
+    elif action == '2':
         connection.request('POST', '/sysup2vip', json_foo, headers)
+    elif action == '3':
+        connection.request('POST', '/syschaextvip', json_foo, headers)
+    elif action == '4':
+        connection.request('POST', '/sysextvip', json_foo, headers)
     response = connection.getresponse()
     ret = (response.read().decode())
     connection.close()
     jo = json.loads(ret)
-    if jo['status'] == 'ok' and action != '2':
+    if jo['status'] == 'ok' and action == '0':
+        logitem = MoneyLog()
+        logitem.userid = userid
+        logitem.action = action
+        logitem.amount = amount
+        logitem.newbalance = jo['message']
+        logitem.by = 'default admin'
+        now = datetime.datetime.now()
+        logitem.date = now.strftime("%Y-%m-%d %H:%M")
+        db.session.add(logitem)
+        db.session.commit()
+    if jo['status'] == 'ok' and action == '1':
         logitem = MoneyLog()
         logitem.userid = userid
         logitem.action = action

@@ -127,7 +127,7 @@ class MyModelView(sqla.ModelView):
 class MyModelView2(sqla.ModelView):
     # Visible columns in the list view
     #column_exclude_list = ['team_total']
-    list_columns = ['good_id', 'title', 'catalog', 'activity', 'off', 'rate', 'url', 'price', 'sell', 'expire', 'tb_token']
+    list_columns = ['good_id', 'title', 'catalog', 'activity', 'off', 'rate', 'url', 'price', 'sell', 'expire']
     # List of columns that can be sorted. For 'user' column, use User.username as
     # a column.
     column_sortable_list = ('title', 'url', 'price', 'expire')
@@ -222,14 +222,14 @@ def upload_file():
                             item = GoodInfo(title=sheet.cell(row,0).value, catalog=catalog, activity=activity,
                                 off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
                                 url=sheet.cell(row,6).value, price=sheet.cell(row,7).value, sell=sheet.cell(row,8).value,
-                                expire=expire_str, tb_token=sheet.cell(row,10).value)
+                                expire=expire_str, tb_token='')
                             db.session.add(item)
                         else:
                             db.session.delete(originItem)
                             item = GoodInfo(title=sheet.cell(row,0).value, catalog=catalog, activity=activity,
                                 off=sheet.cell(row,3).value, rate=sheet.cell(row,4).value, image=sheet.cell(row,5).value,
                                 url=sheet.cell(row,6).value, price=sheet.cell(row,7).value, sell=sheet.cell(row,8).value,
-                                expire=expire_str, tb_token=sheet.cell(row,10).value)
+                                expire=expire_str, tb_token='')
                             db.session.add(item)
                 db.session.commit()
                 os.remove('/home/lct/logs/tmp9s0d9.xls')
@@ -317,7 +317,7 @@ def download_file():
         jsonify({'status': 'ok',
                     'message': "没有数据"
                 })
-    column_names = ['title', 'catalog', 'activity', 'off', 'rate', 'image', 'url', 'price', 'sell', 'expire', 'tb_token']
+    column_names = ['title', 'catalog', 'activity', 'off', 'rate', 'image', 'url', 'price', 'sell', 'expire']
     response = excel.make_response_from_query_sets(query_sets, column_names, "xls")
     cd = 'attachment; filename=expiredGood.xls'
     response.headers['Content-Disposition'] = cd
