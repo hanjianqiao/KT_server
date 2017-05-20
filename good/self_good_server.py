@@ -198,8 +198,12 @@ def upload_file():
                         expire_str = ''
                         #print("####row is %s" % sheet.cell(row,5).value)
                         if type(sheet.cell(row,5).value) is str:
-                            excel_date = datetime.datetime.strptime(sheet.cell(row,5).value, '%Y-%m-%d %H:%M:%S')
-                            expire_str = ''+str(excel_date.year)+'/'+str(excel_date.month)+'/'+str(excel_date.day)
+                            try:
+                                excel_date = datetime.datetime.strptime(sheet.cell(row,5).value, '%Y-%m-%d %H:%M:%S')
+                                expire_str = ''+str(excel_date.year)+'/'+str(excel_date.month)+'/'+str(excel_date.day)
+                            except:
+                                excel_date = datetime.datetime.strptime(sheet.cell(row,5).value, '%Y-%m-%d')
+                                expire_str = ''+str(excel_date.year)+'/'+str(excel_date.month)+'/'+str(excel_date.day)
                         else:
                             excel_date = xlrd.xldate_as_tuple(sheet.cell(row,5).value, 0)
                             expire_str = ''+str(excel_date[0])+'/'+str(excel_date[1])+'/'+str(excel_date[2])
