@@ -263,7 +263,7 @@ def up2vip(user_id, expire_year, expire_month, expire_day, fee, log):
             break;
         c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
         ret = c.fetchall()
-        if ret[0][4] == 'agent' or ret[0][4] == 'golden' or ret[0][4] == 'cofound':
+        if ret[0][4] == 'agent_lt' or ret[0][4] == 'agent' or ret[0][4] == 'golden_lt' or ret[0][4] == 'golden' or ret[0][4] == 'cofound':
             break;
         searchTarget = ret[0][3]
     # check agent's vip
@@ -389,7 +389,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
             break;
         c.execute("SELECT expire_year, expire_month, expire_day, inviter, level FROM user_info WHERE user_id = ?", (searchTarget,))
         ret = c.fetchall()
-        if ret[0][4] == 'agent' or ret[0][4] == 'golden' or ret[0][4] == 'cofound':
+        if ret[0][4] == 'agent_lt' or ret[0][4] == 'agent' or ret[0][4] == 'golden_lt' or ret[0][4] == 'golden' or ret[0][4] == 'cofound':
             break;
         searchTarget = ret[0][3]
     # check agent's vip
@@ -473,7 +473,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
             elif int(ret[0][1]) == now.month:
                 if int(ret[0][2]) < now.day:
                     isExpired = True
-        if (isExpired == False) and (ret[0][4] == 'agent' or ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
+        if (isExpired == False) and (ret[0][4] == 'agent_lt' or ret[0][4] == 'agent' or ret[0][4] == 'golden_lt' or ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
             break;
         if searchTarget == '13800000000':
             break;
@@ -501,7 +501,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
             elif int(ret[0][1]) == now.month:
                 if int(ret[0][2]) < now.day:
                     isExpired = True
-        if (isExpired == False) and (ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
+        if (isExpired == False) and (ret[0][4] == 'golden_lt' or ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
             break;
         if searchTarget == '13800000000':
             break;
@@ -646,7 +646,7 @@ def extendvip(user_id, extend_month, fee, log):
                 elif int(ret[0][1]) == now.month:
                     if int(ret[0][2]) < now.day:
                         isExpired = True
-            if (isExpired == False) and (ret[0][4] == 'agent' or ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
+            if (isExpired == False) and (ret[0][4] == 'agent_lt' or ret[0][4] == 'agent' or ret[0][4] == 'golden_lt' or ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
                 break;
             if searchTarget == '13800000000':
                 break;
@@ -674,7 +674,7 @@ def extendvip(user_id, extend_month, fee, log):
                 elif int(ret[0][1]) == now.month:
                     if int(ret[0][2]) < now.day:
                         isExpired = True
-            if (isExpired == False) and (ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
+            if (isExpired == False) and (ret[0][4] == 'golden_lt' or ret[0][4] == 'golden' or ret[0][4] == 'cofound'):
                 break;
             if searchTarget == '13800000000':
                 break;

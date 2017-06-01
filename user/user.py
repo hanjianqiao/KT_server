@@ -159,7 +159,7 @@ class MyModelView2(sqla.ModelView):
     column_filters = ('inviter', 'wechat', 'code', 'expire_month', 'expire_day', 'balance', 
                       filters.FilterLike(UserInfo.type, u'类型', options=(('user', u'普通用户'), ('vip', u'VIP及代理'))),
                       filters.FilterLike(UserInfo.level, u'级别',
-                            options=(('user', u'普通用户'), ('vip', u'会员'), ('agent', u'代理'), ('golden', u'金牌代理'), ('cofound', u'联合创始人'))))
+                            options=(('user', u'普通用户'), ('vip', u'会员'), ('agent', u'永久代理'), ('golden', u'永久金牌代理'), ('agent_lt', u'代理'), ('golden_lt', u'金牌代理'), ('cofound', u'联合创始人'))))
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:
