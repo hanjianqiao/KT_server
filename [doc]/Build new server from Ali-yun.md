@@ -222,10 +222,10 @@ sudo vim /etc/nginx/conf.d/nginx_static.conf
 ```
 server {
 	listen          3123;
-    server_name     shop.vsusvip.com;
-    location / {
-        root /home/lct/user.server/static;
-    }
+	server_name     shop.vsusvip.com;
+	location / {
+		root /home/lct/user.server/static;
+	}
 }
 ```
 

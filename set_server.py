@@ -31,7 +31,7 @@ def mes2user(userid, title, body):
     # charge user
     # create a unverified https connection to set server
     #context = ssl._create_unverified_context()
-    connection = http.client.HTTPConnection('user.hanjianqiao.cn', 30000)
+    connection = http.client.HTTPConnection('user.vsusvip.com', 30000)
     foo = {  'userid': userid,
         'title':title,
         'body':body}
@@ -46,7 +46,7 @@ def mes2bil(userid, action, amount):
     # charge user
     # create a unverified https connection to set server
     #context = ssl._create_unverified_context()
-    connection = http.client.HTTPConnection('user.hanjianqiao.cn', 40000)
+    connection = http.client.HTTPConnection('user.vsusvip.com', 40000)
     foo = {  'userid': userid,
         'action':action,
         'amount':amount}
@@ -835,6 +835,6 @@ def dealinfocheck():
 
 
 if __name__ == '__main__':
-    #context = ('sslcrts/2_user.hanjianqiao.cn.crt', 'sslcrts/3_user.hanjianqiao.cn.key')
+    #context = ('sslcrts/2_user.vsusvip.com.crt', 'sslcrts/3_user.vsusvip.com.key')
     #app.run(host='0.0.0.0', port=10010, ssl_context=context)
     app.run(port=10010, debug=True)
