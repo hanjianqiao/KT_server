@@ -24,6 +24,10 @@ database_path = os.path.join(database_folder, 'user_info.db')
 deltaHours = 20
 deltaMinutes = 10
 
+def mk_int(s):
+    s = s.strip()
+    return int(s) if s else 0
+
 # headers
 headers = {'Content-type': 'application/json'}
 
@@ -452,7 +456,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     # update inviter's information
     c.execute("SELECT balance FROM user_info WHERE user_id = ?",(inviter,))
     inviter_row = c.fetchall()
-    inviter_balance = str(int(inviter_row[0][0])+140)
+    inviter_balance = str(mk_int(inviter_row[0][0])+140)
     c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
               (inviter_balance, inviter,))
     mes2bil(inviter, '邀请用户开通：'+user_id, '+'+str(140))
