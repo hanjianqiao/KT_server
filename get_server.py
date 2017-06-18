@@ -253,7 +253,7 @@ def api_login1():
 
 
 up2vipinfo = {
-    'price':'298'
+    'price':'498'
 }
 
 
@@ -322,7 +322,7 @@ def api_extendvip():
         # if ret:
         #     return jsonify({'status': 'failed', 'message': '未完成：' + ret[0][3]})
 
-        return extendvip(user_id, month, str(int(month)*138))
+        return extendvip(user_id, month, str(int(month)*198))
     return jsonify({'status': 'failed', 'message': 'json data format error'})
 
 

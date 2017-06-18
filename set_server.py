@@ -416,7 +416,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     agent_row = c.fetchall()
     agent_remain = agent_row[0][1]
     if int(agent_remain) > 0:
-        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '298', False)
+        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '498', False)
     else:
         mes2user(user_id, '系统为您升级VIP', '系统为你升级为VIP')
 
@@ -456,10 +456,10 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     # update inviter's information
     c.execute("SELECT balance FROM user_info WHERE user_id = ?",(inviter,))
     inviter_row = c.fetchall()
-    inviter_balance = str(mk_int(inviter_row[0][0])+140)
+    inviter_balance = str(mk_int(inviter_row[0][0])+200)
     c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
               (inviter_balance, inviter,))
-    mes2bil(inviter, '邀请用户开通：'+user_id, '+'+str(140))
+    mes2bil(inviter, '邀请用户开通：'+user_id, '+'+str(200))
     mes2user(inviter, '用户开通VIP', '您邀请的用户'+user_id+'开通VIP')
 
     # update agent's information
@@ -512,10 +512,10 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
         searchTarget = ret[0][3]
     c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
     inviter_row = c.fetchall()
-    inviter_balance = str(int(inviter_row[0][0])+10)
+    inviter_balance = str(int(inviter_row[0][0])+20)
     c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
               (inviter_balance, searchTarget,))
-    mes2bil(searchTarget, '金牌VIP开通收益：'+user_id, '+'+str(10))
+    mes2bil(searchTarget, '金牌VIP开通收益：'+user_id, '+'+str(20))
     mes2user(searchTarget, '金牌：用户开通VIP', '用户'+user_id+'开通VIP')
 
     # update cofound's information
@@ -540,10 +540,10 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
         searchTarget = ret[0][3]
     c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
     inviter_row = c.fetchall()
-    inviter_balance = str(int(inviter_row[0][0])+20)
+    inviter_balance = str(int(inviter_row[0][0])+80)
     c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
               (inviter_balance, searchTarget,))
-    mes2bil(searchTarget, '联合VIP开通收益：'+user_id, '+'+str(20))
+    mes2bil(searchTarget, '联合VIP开通收益：'+user_id, '+'+str(80))
     mes2user(searchTarget, '联合：用户开通VIP', '用户'+user_id+'开通VIP')
 
     get_db().commit()
@@ -562,7 +562,7 @@ def api_sysup2vip():
         fee = info_data.get('fee', '')
         
         now = datetime.datetime.now()
-        return sysup2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '298', False)
+        return sysup2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '498', False)
 
     return jsonify({'status': 'failed'})
 
@@ -629,10 +629,10 @@ def extendvip(user_id, extend_month, fee, log):
         # update inviter's information
         c.execute("SELECT balance FROM user_info WHERE user_id = ?",(inviter,))
         inviter_row = c.fetchall()
-        inviter_balance = str(int(inviter_row[0][0])+50*int(extend_month))
+        inviter_balance = str(int(inviter_row[0][0])+60*int(extend_month))
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
                   (inviter_balance, inviter,))
-        mes2bil(inviter, '邀请用户VIP延长'+extend_month+'个月', '+'+str(50*int(extend_month)))
+        mes2bil(inviter, '邀请用户VIP延长'+extend_month+'个月', '+'+str(60*int(extend_month)))
         mes2user(inviter, '用户延长VIP', '您邀请的用户'+user_id+'VIP延长'+extend_month+'个月')
 
         # update agent's information
@@ -657,10 +657,10 @@ def extendvip(user_id, extend_month, fee, log):
             searchTarget = ret[0][3]
         c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
         inviter_row = c.fetchall()
-        inviter_balance = str(int(inviter_row[0][0])+18*int(extend_month))
+        inviter_balance = str(int(inviter_row[0][0])+10*int(extend_month))
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
                   (inviter_balance, searchTarget,))
-        mes2bil(searchTarget, '代理VIP延长收益：'+extend_month+'个月', '+'+str(18*int(extend_month)))
+        mes2bil(searchTarget, '代理VIP延长收益：'+extend_month+'个月', '+'+str(10*int(extend_month)))
         mes2user(searchTarget, '代理：用户延长VIP', '用户'+user_id+'VIP延长'+extend_month+'个月')
 
         # update golden's information
@@ -713,10 +713,10 @@ def extendvip(user_id, extend_month, fee, log):
             searchTarget = ret[0][3]
         c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
         inviter_row = c.fetchall()
-        inviter_balance = str(int(inviter_row[0][0])+10*int(extend_month))
+        inviter_balance = str(int(inviter_row[0][0])+38*int(extend_month))
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
                   (inviter_balance, searchTarget,))
-        mes2bil(searchTarget, '联合VIP延长收益：'+extend_month+'个月', '+'+str(10*int(extend_month)))
+        mes2bil(searchTarget, '联合VIP延长收益：'+extend_month+'个月', '+'+str(38*int(extend_month)))
         mes2user(searchTarget, '联合：用户延长VIP', '用户'+user_id+'VIP延长'+extend_month+'个月')
 
         # record number of vip
@@ -762,12 +762,12 @@ def syschaextvip():
         c.execute("SELECT balance FROM user_info WHERE user_id = ?", (user_id,))
         inviter_row = c.fetchall()
         balance = inviter_row[0][0]
-        newValue = str(int(balance)+138)
+        newValue = str(int(balance)+198)
         c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",(newValue, user_id,))
         get_db().commit()
-        mes2user(user_id, '充值成功', '充值金额：138元')
-        mes2bil(user_id, '充值', '+138')
-        return extendvip(user_id, '1', '138', True)
+        mes2user(user_id, '充值成功', '充值金额：198元')
+        mes2bil(user_id, '充值', '+198')
+        return extendvip(user_id, '1', '198', True)
         
     return jsonify({'status': 'failed'})
 
@@ -778,7 +778,7 @@ def sysextvip():
         info_data = request.get_json(force=True, silent=True)
         user_id = info_data.get('user_id', '')
 
-        return extendvip(user_id, '1', '138', True)
+        return extendvip(user_id, '1', '198', True)
         
     return jsonify({'status': 'failed'})
 
