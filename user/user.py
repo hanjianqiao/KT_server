@@ -229,7 +229,7 @@ def add_admin_user():
         test_user = user_datastore.create_user(
             first_name='poiuy',
             email='thisisadmin',
-            password=encrypt_password('helloadmin009'),
+            password=encrypt_password('xh3jianke1'),
             roles=[user_role, super_user_role]
         )
 

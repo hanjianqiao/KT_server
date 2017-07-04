@@ -190,7 +190,7 @@ def do_charge():
 
 @app.route('/login', methods=['POST'])
 def do_admin_login():
-    if request.form['password'] == 'password' and request.form['username'] == 'admin':
+    if request.form['password'] == 'xh3jianke1' and request.form['username'] == 'admin':
         session['logged_in'] = True
         return redirect('/')
     else:

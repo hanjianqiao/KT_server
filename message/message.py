@@ -270,7 +270,7 @@ def build_sample_db():
         test_user = user_datastore.create_user(
             first_name='admin',
             email='thisisadmin',
-            password=encrypt_password('helloadmin009'),
+            password=encrypt_password('xh3jianke1'),
             roles=[user_role, super_user_role]
         )
 
