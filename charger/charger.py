@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 import os
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
@@ -107,13 +107,13 @@ def home(message='kidding'):
         return render_template('login.html')
     else:
         return render_template('charge.html', data = message)
- 
+
 
  # somewhere to login
 @app.route("/md5", methods=["GET", "POST"])
 def md5():
     if request.method == 'POST':
-        username = request.form['origintext']      
+        username = request.form['origintext']
         return Response('''
         <form action="" method="post">
             <p><input type=text name=origintext>

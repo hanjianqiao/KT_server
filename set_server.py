@@ -416,7 +416,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     agent_row = c.fetchall()
     agent_remain = agent_row[0][1]
     if int(agent_remain) > 0:
-        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '498', False)
+        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '598', False)
     else:
         mes2user(user_id, '系统为您升级VIP', '系统为你升级为VIP')
 
@@ -540,10 +540,10 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
         searchTarget = ret[0][3]
     c.execute("SELECT balance FROM user_info WHERE user_id = ?",(searchTarget,))
     inviter_row = c.fetchall()
-    inviter_balance = str(int(inviter_row[0][0])+80)
+    inviter_balance = str(int(inviter_row[0][0])+150)
     c.execute("UPDATE user_info SET balance = ? WHERE user_id = ?",
               (inviter_balance, searchTarget,))
-    mes2bil(searchTarget, '联合VIP开通收益：'+user_id, '+'+str(80))
+    mes2bil(searchTarget, '联合VIP开通收益：'+user_id, '+'+str(150))
     mes2user(searchTarget, '联合：用户开通VIP', '用户'+user_id+'开通VIP')
 
     get_db().commit()
@@ -560,9 +560,9 @@ def api_sysup2vip():
         expire_month = info_data.get('expire_month', '')
         expire_day = info_data.get('expire_day', '')
         fee = info_data.get('fee', '')
-        
+
         now = datetime.datetime.now()
-        return sysup2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '498', False)
+        return sysup2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '598', False)
 
     return jsonify({'status': 'failed'})
 
@@ -744,7 +744,7 @@ def api_extendvip():
         fee = info_data.get('fee', '')
 
         return extendvip(user_id, extend_month, fee, True)
-        
+
     return jsonify({'status': 'failed'})
 
 
@@ -768,7 +768,7 @@ def syschaextvip():
         mes2user(user_id, '充值成功', '充值金额：198元')
         mes2bil(user_id, '充值', '+198')
         return extendvip(user_id, '1', '198', True)
-        
+
     return jsonify({'status': 'failed'})
 
 
@@ -779,7 +779,7 @@ def sysextvip():
         user_id = info_data.get('user_id', '')
 
         return extendvip(user_id, '1', '198', True)
-        
+
     return jsonify({'status': 'failed'})
 
 

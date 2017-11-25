@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 import os
 import re
 import random
@@ -253,7 +253,7 @@ def api_login1():
 
 
 up2vipinfo = {
-    'price':'498'
+    'price':'598'
 }
 
 
@@ -283,7 +283,7 @@ def api_up2vip():
             return jsonify({'status': 'failed', 'message': '用户名不存在'})
         if not secret_check(password, ret[0][1]):
             return jsonify({'status': 'failed', 'message': '密码错误'})
-        
+
         # c.execute("SELECT * FROM deal_info WHERE user_id=?", (user_id,))
         # ret = c.fetchall()
         # if ret:
