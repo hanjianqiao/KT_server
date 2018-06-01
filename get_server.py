@@ -253,7 +253,7 @@ def api_login1():
 
 
 up2vipinfo = {
-    'price':'598'
+    'price':'698'
 }
 
 

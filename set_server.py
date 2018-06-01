@@ -416,7 +416,7 @@ def sysup2vip(user_id, expire_year, expire_month, expire_day, fee, log):
     agent_row = c.fetchall()
     agent_remain = agent_row[0][1]
     if int(agent_remain) > 0:
-        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '598', False)
+        return up2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '698', False)
     else:
         mes2user(user_id, '系统为您升级VIP', '系统为你升级为VIP')
 
@@ -562,7 +562,7 @@ def api_sysup2vip():
         fee = info_data.get('fee', '')
 
         now = datetime.datetime.now()
-        return sysup2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '598', False)
+        return sysup2vip(user_id, str(now.year + int(now.month/12)), str(now.month%12+1), str(now.day), '698', False)
 
     return jsonify({'status': 'failed'})
 
